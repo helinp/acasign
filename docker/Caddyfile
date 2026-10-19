@@ -1,0 +1,21 @@
+{
+    frankenphp
+    auto_https off
+    admin off
+    servers {
+        trusted_proxies static private_ranges
+    }
+}
+
+:8080 {
+    root * /var/www/html/public
+    encode zstd gzip
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+    php_server
+}

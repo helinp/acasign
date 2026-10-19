@@ -1,0 +1,92 @@
+services:
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-signature}
+      POSTGRES_USER: ${DB_USERNAME:-signature}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requis}
+    volumes:
+      - /srv/docker/signature/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-signature} -d ${DB_DATABASE:-signature}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+    security_opt: [no-new-privileges:true]
+
+  migrate:
+    build: .
+    command: ["php", "artisan", "migrate", "--force"]
+    env_file: .env
+    depends_on:
+      database: { condition: service_healthy }
+    volumes: &app_volumes
+      - /srv/docker/signature/data:/var/www/html/storage/app/private
+      - /srv/docker/signature/logs:/var/www/html/storage/logs
+    secrets: &app_secrets [pdf_signing_certificate, pdf_signing_private_key]
+    networks: [backend]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: *app_volumes
+    secrets: *app_secrets
+    networks: [backend, proxy]
+    read_only: true
+    tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/sessions:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.signature.rule=Host(`${SIGNATURE_HOST}`)
+      - traefik.http.routers.signature.entrypoints=websecure
+      - traefik.http.routers.signature.tls=true
+      - traefik.http.routers.signature.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.services.signature.loadbalancer.server.port=8080
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=4", "--timeout=60"]
+    env_file: .env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: *app_volumes
+    secrets: *app_secrets
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    env_file: .env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: *app_volumes
+    secrets: *app_secrets
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+secrets:
+  pdf_signing_certificate:
+    file: ./secrets/pdf-signing.crt
+  pdf_signing_private_key:
+    file: ./secrets/pdf-signing.key
+
+networks:
+  backend: { internal: true }
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}
