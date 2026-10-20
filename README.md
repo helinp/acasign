@@ -1,8 +1,8 @@
-# Visa
+# AcaSign
 
 Application interne de signature simple de documents PDF. Elle utilise exclusivement Microsoft Entra ID pour les utilisateurs, appose une image chiffrée et un QR de vérification pour chaque signataire, puis scelle le PDF final avec un certificat interne.
 
-> Visa fournit une preuve de validation interne. Ce n’est pas une signature avancée ou qualifiée eIDAS.
+> AcaSign fournit une preuve de validation interne. Ce n’est pas une signature avancée ou qualifiée eIDAS.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ npm ci
 npm run build
 php artisan key:generate
 php artisan migrate
-./scripts/generate-signing-certificate.sh
+CERT_ORGANIZATION="Nom de l'établissement" ./scripts/generate-signing-certificate.sh
 php artisan serve
 ```
 
@@ -74,7 +74,7 @@ sudo install -d -o 33 -g 33 -m 750 /srv/docker/signature/secrets
 sudo openssl req -x509 -newkey rsa:4096 -sha256 -days 1825 -nodes \
   -keyout /srv/docker/signature/secrets/pdf-signing.key \
   -out /srv/docker/signature/secrets/pdf-signing.crt \
-  -subj "/C=BE/O=AC'Arts/CN=Visa - cachet interne"
+  -subj "/C=BE/O=Nom de l'établissement/CN=AcaSign - cachet interne"
 sudo chown 33:33 /srv/docker/signature/secrets/pdf-signing.key /srv/docker/signature/secrets/pdf-signing.crt
 sudo chmod 400 /srv/docker/signature/secrets/pdf-signing.key
 sudo chmod 444 /srv/docker/signature/secrets/pdf-signing.crt
@@ -87,7 +87,7 @@ Le déploiement Compose direct reste également disponible :
 
 ```sh
 cp .env.example .env
-./scripts/generate-signing-certificate.sh
+CERT_ORGANIZATION="Nom de l'établissement" ./scripts/generate-signing-certificate.sh
 sudo install -d -o 33 -g 33 /srv/docker/signature/data /srv/docker/signature/logs
 sudo install -d -o 70 -g 70 /srv/docker/signature/postgres
 docker compose build
