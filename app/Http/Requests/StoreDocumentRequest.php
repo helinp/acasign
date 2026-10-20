@@ -32,6 +32,7 @@ class StoreDocumentRequest extends FormRequest
             'documents.*' => ['file', 'mimes:pdf', 'max:25600'],
             'document' => ['nullable', 'file', 'mimes:pdf', 'max:25600'],
             'self_sign' => ['nullable', 'boolean'],
+            'signer_can_move' => ['nullable', 'boolean'],
             'signers' => ['nullable', 'array', 'max:20'],
             'signers.*' => ['nullable', 'email:rfc', 'distinct'],
             'expires_at' => ['nullable', 'date', 'after:today'],

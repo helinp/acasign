@@ -20,6 +20,7 @@ class Document extends Model
             'expires_at' => 'datetime', 'completed_at' => 'datetime',
             'cancelled_at' => 'datetime', 'revoked_at' => 'datetime',
             'page_sizes' => 'array',
+            'signer_can_move' => 'boolean',
         ];
     }
 

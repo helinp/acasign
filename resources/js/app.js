@@ -117,7 +117,10 @@ if (stage) {
     buildToolbar(stage, pageWrappers, pdf.numPages);
 
     const { makeMovable } = await import('./placement.js');
-    stage.querySelectorAll('.signature-zone').forEach(zone => makeMovable(zone, savePlacements, `Cadre de signature : ${zone.textContent}`));
+    const zonesMovable = stage.dataset.movable !== 'false';
+    if (zonesMovable) {
+        stage.querySelectorAll('.signature-zone').forEach(zone => makeMovable(zone, savePlacements, `Cadre de signature : ${zone.textContent}`));
+    }
     const { setupFields } = await import('./fields.js');
     setupFields({ stage, pages: pageWrappers, csrf });
 
@@ -125,6 +128,7 @@ if (stage) {
         const zone = document.createElement('div'); zone.className = 'signature-zone'; zone.dataset.id = placement.id;
         zone.textContent = placement.label; zone.style.left = `${placement.x * 100}%`; zone.style.top = `${placement.y * 100}%`;
         zone.style.width = `${placement.width * 100}%`; zone.style.height = `${placement.height * 100}%`; wrapper.appendChild(zone);
+        if (stage.dataset.movable === 'false') { zone.classList.add('is-locked'); zone.title = 'Emplacement fixé par le demandeur'; return; }
         zone.addEventListener('pointerdown', event => {
             zone.setPointerCapture(event.pointerId); zone.classList.add('dragging');
             const bounds = wrapper.getBoundingClientRect(); const initial = zone.getBoundingClientRect();

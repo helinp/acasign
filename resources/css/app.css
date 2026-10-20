@@ -205,3 +205,4 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 .file-list { list-style: none; padding: 0; margin: .5rem 0 0; font-size: 14px; }
 .file-list li { padding: .2rem 0; border-bottom: 1px solid var(--ac-ligne); }
 .alert a { color: inherit; text-decoration: underline; }
+.signature-zone.is-locked { cursor: default; }
