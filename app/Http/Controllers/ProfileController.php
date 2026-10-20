@@ -30,6 +30,9 @@ class ProfileController extends Controller
             'job_title' => ['nullable', 'string', 'max:120'],
             'notify_to_sign' => ['sometimes', 'boolean'],
             'notify_signed' => ['sometimes', 'boolean'],
+            'sign_show_name' => ['sometimes', 'boolean'],
+            'sign_show_job_title' => ['sometimes', 'boolean'],
+            'sign_show_date' => ['sometimes', 'boolean'],
         ]);
         $request->user()->update($data);
         $audit->record('profile.identity.updated', null, $request->user(), [], $request);

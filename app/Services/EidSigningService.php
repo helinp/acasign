@@ -272,7 +272,7 @@ class EidSigningService
     private function appearance(Document $document, SignatureRequest $signatureRequest, User $user): array
     {
         [$pageWidth, $pageHeight] = $document->page_sizes[$signatureRequest->page - 1] ?? [595.28, 841.89];
-        $lines = $signatureRequest->stampLines(now());
+        $lines = $signatureRequest->stampLines(now(), withEid: true);
 
         return array_filter([
             'image' => $user->signature_path ? ['bytes' => base64_encode($this->images->bytes($user)), 'name' => 'signature.png'] : null,

@@ -5,7 +5,6 @@
     $s = $signatureRequest;
     $d = $s->document;
     $me = auth()->user();
-    $signOptions = $s->display_options ?? [];
     // eidOnly : type exigeant l'eID, ou document déjà signé par eID (le PDF ne peut plus être réécrit).
     $eidOnly = $d->usesEid();
     $eidAvailable = ! $eidBlocked;
@@ -43,12 +42,12 @@
 <div class="modal fade" id="signModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" id="sign-form" method="post" action="{{ route('signatures.sign',$s) }}" @if($eidAvailable) data-eid-sign data-prepare-url="{{ route('signatures.eid.prepare', $s) }}" data-finalize-url="{{ route('signatures.eid.finalize', $s) }}" data-failure-url="{{ route('signatures.eid.failure', $s) }}" @endif>@csrf
     <div class="band"><span class="band__title"><x-icon name="signature" />Mentions sous la signature</span></div>
     <div class="modal-body">
-        <div class="form-check mb-2"><input type="hidden" name="show_name" value="0"><input class="form-check-input" type="checkbox" name="show_name" value="1" id="show_name" @checked(old('show_name', $signOptions['show_name'] ?? true))><label class="form-check-label" for="show_name">{{ $me->signatureName() }}</label></div>
-        <div class="form-check mb-1"><input type="hidden" name="show_job_title" value="0"><input class="form-check-input" type="checkbox" name="show_job_title" value="1" id="show_job_title" @checked(old('show_job_title', $signOptions['show_job_title'] ?? filled($me->job_title)))><label class="form-check-label" for="show_job_title">Qualité</label></div>
+        <div class="form-check mb-2"><input type="hidden" name="show_name" value="0"><input class="form-check-input" type="checkbox" name="show_name" value="1" id="show_name" @checked(old('show_name', $me->sign_show_name ?? true))><label class="form-check-label" for="show_name">{{ $me->signatureName() }}</label></div>
+        <div class="form-check mb-1"><input type="hidden" name="show_job_title" value="0"><input class="form-check-input" type="checkbox" name="show_job_title" value="1" id="show_job_title" @checked(old('show_job_title', ($me->sign_show_job_title ?? true) && filled($me->job_title)))><label class="form-check-label" for="show_job_title">Qualité</label></div>
         <input class="form-control form-control-sm mb-2 @error('job_title') is-invalid @enderror" name="job_title" maxlength="120" value="{{ old('job_title', $me->job_title) }}" placeholder="Directeur, professeur…" aria-label="Qualité">
-        <div class="form-check"><input type="hidden" name="show_date" value="0"><input class="form-check-input" type="checkbox" name="show_date" value="1" id="show_date" @checked(old('show_date', $signOptions['show_date'] ?? true))><label class="form-check-label" for="show_date">Date et heure</label></div>
+        <div class="form-check"><input type="hidden" name="show_date" value="0"><input class="form-check-input" type="checkbox" name="show_date" value="1" id="show_date" @checked(old('show_date', $me->sign_show_date ?? true))><label class="form-check-label" for="show_date">Date et heure</label></div>
         <p class="form-label mt-3 mb-1" id="sign-preview-label">Aperçu</p>
-        <div class="sign-preview" data-sign-preview data-name="{{ $me->signatureName() }}" aria-labelledby="sign-preview-label">
+        <div class="sign-preview" data-sign-preview data-mode="{{ $eidOnly ? 'eid' : 'internal' }}" data-name="{{ $me->signatureName() }}" aria-labelledby="sign-preview-label">
             @if($me->signature_path)<img src="{{ route('profile.signature.show', ['v' => $me->updated_at?->timestamp]) }}" alt="Votre image de signature">@endif
             <div data-preview-lines></div>
         </div>

@@ -17,6 +17,13 @@
                 <div class="form-check"><input type="hidden" name="notify_signed" value="0"><input class="form-check-input" type="checkbox" name="notify_signed" value="1" id="notify_signed" @checked(old('notify_signed', $user->notify_signed ?? true))><label class="form-check-label" for="notify_signed">Un document que j’ai envoyé est signé</label></div>
                 <p class="small text-muted mb-0 mt-1">Les refus, annulations et révocations sont toujours envoyés.</p>
             </fieldset>
+            <fieldset class="mb-3">
+                <legend class="form-label mb-1"><x-icon name="signature" class="me-1" />Mentions sous ma signature <span class="text-muted small">cochées par défaut, modifiables à chaque signature</span></legend>
+                @foreach(['sign_show_name' => 'Nom', 'sign_show_job_title' => 'Qualité', 'sign_show_date' => 'Date et heure'] as $field => $label)
+                    <div class="form-check"><input type="hidden" name="{{ $field }}" value="0"><input class="form-check-input" type="checkbox" name="{{ $field }}" value="1" id="{{ $field }}" @checked(old($field, $user->{$field} ?? true))><label class="form-check-label" for="{{ $field }}">{{ $label }}</label></div>
+                @endforeach
+                <p class="small text-muted mb-0 mt-1">Avec la carte eID, la date s’affiche « Signé avec eID le … ».</p>
+            </fieldset>
             <button class="btn btn-primary"><x-icon name="device-floppy" />Enregistrer</button>
         </form>
     </div>

@@ -17,11 +17,13 @@ if (preview) {
         const items = [
             checked('show_name') && preview.dataset.name,
             checked('show_job_title') && form.querySelector('[name="job_title"]')?.value.trim(),
-            checked('show_date') && `Signé le ${now}`,
+            checked('show_date') && `${preview.dataset.mode === 'eid' ? 'Signé avec eID le' : 'Signé le'} ${now}`,
         ].filter(Boolean);
         lines.replaceChildren(...(items.length ? items : ['(aucune mention)']).map(text => Object.assign(document.createElement('div'), { textContent: text })));
     };
     form.addEventListener('input', render);
+    // La mention de date dépend du mode choisi (bouton « Signer sans eID » ou « avec ma carte eID »).
+    document.querySelectorAll('[data-open-sign]').forEach(button => button.addEventListener('click', () => { preview.dataset.mode = button.dataset.openSign; render(); }));
     render();
 }
 

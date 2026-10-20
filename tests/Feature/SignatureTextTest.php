@@ -26,6 +26,25 @@ class SignatureTextTest extends TestCase
         $this->assertSame(['Marie Dupont'], $request->stampLines($signedAt));
     }
 
+    public function test_date_line_mentions_eid_when_signed_with_the_card(): void
+    {
+        $request = new SignatureRequest(['signer_name' => 'Marie Dupont', 'display_options' => ['show_name' => false, 'show_date' => true]]);
+
+        $this->assertSame(['Signé avec eID le 19/10/2026 14:30'], $request->stampLines(new \DateTimeImmutable('2026-10-19 14:30'), withEid: true));
+    }
+
+    public function test_default_mentions_come_from_profile_preferences(): void
+    {
+        $user = User::factory()->create(['job_title' => 'Directrice']);
+
+        $this->actingAs($user)->put(route('profile.update'), ['sign_show_name' => '1', 'sign_show_job_title' => '0', 'sign_show_date' => '1'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue($user->refresh()->sign_show_name);
+        $this->assertFalse($user->sign_show_job_title);
+        $this->assertTrue(User::factory()->create()->refresh()->sign_show_job_title);
+    }
+
     public function test_job_title_line_is_skipped_when_empty(): void
     {
         $request = new SignatureRequest(['signer_name' => 'Marie Dupont', 'display_options' => ['show_name' => true, 'show_job_title' => true, 'show_date' => false]]);

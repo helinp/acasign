@@ -32,18 +32,19 @@ class SignatureRequest extends Model
     }
 
     /**
-     * Lignes de texte imprimées dans le cartouche, selon les choix du signataire.
+     * Lignes de texte imprimées dans le cartouche, selon les choix du signataire ; la date précise « avec eID »
+     * quand la signature est faite avec la carte d'identité.
      *
      * @return list<string>
      */
-    public function stampLines(\DateTimeInterface $signedAt): array
+    public function stampLines(\DateTimeInterface $signedAt, bool $withEid = false): array
     {
         $options = $this->display_options ?? [];
 
         return array_values(array_filter([
             ($options['show_name'] ?? true) ? $this->signer_name : null,
             ($options['show_job_title'] ?? false) ? $this->signer_job_title : null,
-            ($options['show_date'] ?? true) ? 'Signé le '.$signedAt->format('d/m/Y H:i') : null,
+            ($options['show_date'] ?? true) ? ($withEid ? 'Signé avec eID le ' : 'Signé le ').$signedAt->format('d/m/Y H:i') : null,
         ], fn (?string $line) => filled($line)));
     }
 
