@@ -162,7 +162,7 @@ class EidSigningService
                 ...($isLast ? ['status' => 'signed', 'completed_at' => now(), 'sealed_sha256' => $sha] : []),
             ]);
             $this->audit->record('signature.signed', $document, $user, [
-                'signature_request_id' => $signatureRequest->id, 'sha256' => $sha, 'method' => 'eid',
+                'signature_request_id' => $signatureRequest->id, 'sha256' => $sha, 'method' => 'eid', 'consent' => true,
                 'certificate' => $prepared['certificate_info'],
             ]);
             if ($isLast) {

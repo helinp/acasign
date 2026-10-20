@@ -10,7 +10,7 @@
     @forelse($toSign as $document)
         @php($request = $document->signatureRequests->firstWhere('signer_email', strtolower(auth()->user()->email)))
         <a href="{{ route('signatures.show', $request) }}" class="row-link">
-            <div class="flex-grow-1"><strong class="d-block">{{ $document->title }}</strong><span class="small text-muted">{{ $document->document_type ? $document->document_type.' · ' : '' }}{{ $document->requester->name }} · avant le {{ $document->expires_at->format('d/m/Y') }}</span></div>
+            <div class="flex-grow-1"><strong class="d-block">{{ $document->title }}</strong><span class="small text-muted">{{ $document->document_type ? $document->document_type.' · ' : '' }}{{ $document->requester->name }} · avant le {{ $document->expires_at->format('d/m/Y') }}</span>@if($document->expires_at->lte(now()->addDays(3)))<span class="due-soon ms-2">{{ $document->expires_at->isToday() ? 'Aujourd’hui' : 'Échéance dans '.max(1, (int) ceil(now()->diffInDays($document->expires_at))).' j' }}</span>@endif</div>
             <span class="btn btn-sm btn-primary">Signer</span>
         </a>
     @empty
@@ -36,5 +36,5 @@
     </div>
 </section>
 @endif
-<p><a href="{{ route('documents.index') }}"><strong>Tous mes documents →</strong></a></p>
+<p><a href="{{ route('documents.index') }}"><strong>Voir tous mes documents →</strong></a></p>
 @endsection

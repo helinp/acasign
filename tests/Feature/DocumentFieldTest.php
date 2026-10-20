@@ -58,7 +58,7 @@ class DocumentFieldTest extends TestCase
         $signer->update(['signature_path' => 'signatures/test.enc']);
         $field = $this->field($document, $signatureRequest, ['type' => 'text', 'required' => true]);
 
-        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1, 'fields' => [$field->id => '']])
+        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1, 'consent' => 1, 'fields' => [$field->id => '']])
             ->assertSessionHasErrors("fields.{$field->id}");
 
         $this->assertSame('pending', $signatureRequest->fresh()->status);
@@ -70,8 +70,18 @@ class DocumentFieldTest extends TestCase
         $signer->update(['signature_path' => 'signatures/test.enc']);
         $field = $this->field($document, $signatureRequest, ['type' => 'checkbox', 'required' => true]);
 
-        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1])
+        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1, 'consent' => 1])
             ->assertSessionHasErrors("fields.{$field->id}");
+    }
+
+    public function test_signing_requires_reading_confirmation(): void
+    {
+        [, $signer, , $signatureRequest] = $this->pendingDocument();
+        $signer->update(['signature_path' => 'signatures/test.enc']);
+
+        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1])
+            ->assertSessionHasErrors('consent');
+        $this->assertSame('pending', $signatureRequest->fresh()->status);
     }
 
     public function test_printable_values_are_formatted(): void

@@ -31,6 +31,21 @@ class SettingTest extends TestCase
         $this->get(route('branding.logo'))->assertOk()->assertHeader('Content-Type', 'image/png');
     }
 
+    public function test_short_name_is_used_in_the_header_and_full_name_on_login(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [
+            'entity_name' => 'Académie intercommunale de Court-Saint-Étienne',
+            'entity_short_name' => 'ACARTS!',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('ACARTS!', Setting::shortName());
+        $this->actingAs($admin)->get(route('dashboard'))->assertSee('<title>Accueil · ACARTS!</title>', false);
+        auth()->logout();
+        $this->get(route('login'))->assertSee('Académie intercommunale de Court-Saint-Étienne');
+    }
+
     public function test_logo_can_be_removed(): void
     {
         Storage::fake('local');

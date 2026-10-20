@@ -13,7 +13,8 @@ class DashboardController extends Controller
         $email = mb_strtolower($request->user()->email);
         $toSign = Document::query()->with(['requester', 'signatureRequests'])
             ->whereHas('signatureRequests', fn ($q) => $q->where('signer_email', $email)->where('status', 'pending'))
-            ->latest()->get();
+            ->where('status', 'pending')
+            ->orderBy('expires_at')->get();
         $sent = Document::query()->with('signatureRequests')->where('requester_id', $request->user()->id)
             ->where('status', 'pending')->latest()->get();
 

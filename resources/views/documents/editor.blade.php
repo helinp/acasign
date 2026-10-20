@@ -6,8 +6,8 @@
 @if($batch->count() > 1)<p class="eyebrow">Lot · document {{ $position + 1 }} sur {{ $batch->count() }}</p>@endif
 @if($document->usesEid())<div class="alert alert-warning py-2">Signature par carte eID : les champs à compléter ne sont pas disponibles pour ce document.</div>@endif
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
-    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0">Glissez chaque cadre à sa place. Tout est enregistré automatiquement.</p></div>
-    <div class="d-flex align-items-center gap-3"><span class="small text-muted" data-save-state></span>@if($nextUrl)<a href="{{ $nextUrl }}" class="btn btn-primary">Document suivant →</a>@else<a href="{{ $finishUrl }}" class="btn btn-primary">{{ $finishLabel }}</a>@endif</div>
+    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0">Glissez chaque cadre à sa place, ou cliquez-le puis cliquez à l’endroit voulu. Au clavier : Tab pour choisir, flèches pour déplacer. Tout est enregistré automatiquement.</p></div>
+    <div class="d-flex align-items-center gap-3"><span class="small text-muted" data-save-state role="status" aria-live="polite"></span>@if($nextUrl)<a href="{{ $nextUrl }}" class="btn btn-primary">Document suivant →</a>@else<a href="{{ $finishUrl }}" class="btn btn-primary">{{ $finishLabel }}</a>@endif</div>
 </div>
 <div class="row g-4">
     <aside class="col-lg-3">
