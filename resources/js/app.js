@@ -24,6 +24,43 @@ if (preview) {
     render();
 }
 
+// Récapitulatif d'erreurs : focus à l'affichage ; un lien sans cible exacte (ex. documents-0) vise le champ parent.
+const errorSummary = document.querySelector('[data-error-summary]');
+if (errorSummary) {
+    errorSummary.focus();
+    errorSummary.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', event => {
+        const id = link.getAttribute('href').slice(1);
+        const target = document.getElementById(id) ?? document.getElementById(id.split('-')[0]);
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ block: 'center' });
+        (target.matches('input, select, textarea') ? target : target.querySelector('input, select, textarea'))?.focus();
+    }));
+}
+
+// Liste des PDF choisis (nom, taille), avec possibilité d'en retirer un avant l'envoi.
+document.querySelectorAll('input[type=file][data-file-list]').forEach(input => {
+    const output = input.parentElement.querySelector('[data-file-list-output]');
+    const size = bytes => bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+    const render = () => {
+        output.replaceChildren(...[...input.files].map((file, index) => {
+            const item = document.createElement('li');
+            item.append(`${file.name} · ${size(file.size)}${file.size > 25 * 1048576 ? ' — trop volumineux' : ''}`);
+            const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-link text-danger p-0 ms-2', textContent: 'Retirer' });
+            remove.setAttribute('aria-label', `Retirer ${file.name}`);
+            remove.addEventListener('click', () => {
+                const kept = new DataTransfer();
+                [...input.files].forEach((other, otherIndex) => { if (otherIndex !== index) kept.items.add(other); });
+                input.files = kept.files;
+                render();
+            });
+            item.append(remove);
+            return item;
+        }));
+    };
+    input.addEventListener('change', render);
+});
+
 // Confirmation des actions destructives : <form data-confirm="Message">.
 document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {
     if (!window.confirm(form.dataset.confirm)) event.preventDefault();
@@ -56,16 +93,28 @@ if (stage) {
         throw error;
     }
 
+    // Pages créées d'emblée à leur taille (placement possible tout de suite), rendues seulement à l'approche
+    // de la zone visible : un PDF de nombreuses pages reste fluide.
     const pageWrappers = [];
+    const renderQueue = new Map();
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        observer.unobserve(entry.target);
+        renderQueue.get(entry.target)?.();
+    }), { root: stage, rootMargin: '600px 0px' });
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
         const viewport = page.getViewport({ scale: 1.35 });
         const wrapper = document.createElement('div'); wrapper.className = 'pdf-page'; wrapper.dataset.page = pageNumber;
-        const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
-        canvas.width = viewport.width; canvas.height = viewport.height; wrapper.appendChild(canvas); stage.appendChild(wrapper); pageWrappers.push(wrapper);
-        await page.render({ canvasContext: context, viewport }).promise;
+        wrapper.dataset.width = viewport.width; wrapper.style.width = `${viewport.width}px`; wrapper.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
+        wrapper.setAttribute('aria-label', `Page ${pageNumber} sur ${pdf.numPages}`); wrapper.setAttribute('role', 'region');
+        const canvas = document.createElement('canvas'); canvas.width = viewport.width; canvas.height = viewport.height;
+        wrapper.appendChild(canvas); stage.appendChild(wrapper); pageWrappers.push(wrapper);
+        renderQueue.set(wrapper, () => page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise);
+        observer.observe(wrapper);
         placements.filter(p => Number(p.page) === pageNumber).forEach(p => addZone(wrapper, p));
     }
+    buildToolbar(stage, pageWrappers, pdf.numPages);
 
     const { makeMovable } = await import('./placement.js');
     stage.querySelectorAll('.signature-zone').forEach(zone => makeMovable(zone, savePlacements, `Cadre de signature : ${zone.textContent}`));
@@ -90,6 +139,40 @@ if (stage) {
             const up = async () => { zone.classList.remove('dragging'); zone.removeEventListener('pointermove', move); zone.removeEventListener('pointerup', up); if (moved) { (await import('./placement.js')).markDragged(zone); await savePlacements(); } };
             zone.addEventListener('pointermove', move); zone.addEventListener('pointerup', up);
         });
+    }
+
+    /** Barre d'outils du PDF : aller à une page, aller à la signature, zoom. */
+    function buildToolbar(stage, pages, count) {
+        const bar = document.createElement('div');
+        bar.className = 'pdf-toolbar';
+        bar.innerHTML = `
+            <label class="small mb-0">Page <select class="form-select form-select-sm d-inline-block w-auto" data-go-page aria-label="Aller à la page">${pages.map((_, index) => `<option value="${index + 1}">${index + 1}</option>`).join('')}</select> sur ${count}</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-go-signature>Aller à la signature</button>
+            <span class="ms-auto d-inline-flex gap-1" role="group" aria-label="Zoom">
+                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="-0.15" aria-label="Réduire">−</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="0" aria-label="Taille initiale">100 %</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="0.15" aria-label="Agrandir">+</button>
+            </span>`;
+        stage.before(bar);
+        let zoom = 1;
+        const goTo = element => element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        bar.querySelector('[data-go-page]').addEventListener('change', event => goTo(pages[Number(event.target.value) - 1]));
+        bar.querySelector('[data-go-signature]').addEventListener('click', () => {
+            const zone = stage.querySelector('.signature-zone');
+            goTo(zone);
+            zone?.focus({ preventScroll: true });
+        });
+        bar.querySelectorAll('[data-zoom]').forEach(button => button.addEventListener('click', () => {
+            const step = Number(button.dataset.zoom);
+            zoom = step === 0 ? 1 : Math.min(1.6, Math.max(0.5, zoom + step));
+            pages.forEach(page => { page.style.width = `${Number(page.dataset.width) * zoom}px`; });
+            bar.querySelector('[data-zoom="0"]').textContent = `${Math.round(zoom * 100)} %`;
+        }));
+        stage.addEventListener('scroll', () => {
+            const top = stage.getBoundingClientRect().top;
+            const current = pages.findIndex(page => page.getBoundingClientRect().bottom > top + 40);
+            if (current >= 0) bar.querySelector('[data-go-page]').value = String(current + 1);
+        }, { passive: true });
     }
 
     async function savePlacements() {

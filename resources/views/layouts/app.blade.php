@@ -35,7 +35,13 @@
 @endauth
 <main id="contenu" tabindex="-1" class="@yield('main-class', 'container py-4 py-lg-5')">
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert alert-danger"><ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @if($errors->any())
+        {{-- Récapitulatif des erreurs : chaque message mène au champ concerné. --}}
+        <div class="alert alert-danger" role="alert" tabindex="-1" data-error-summary>
+            <strong class="d-block mb-1">{{ $errors->count() > 1 ? $errors->count().' points à corriger' : 'Un point à corriger' }}</strong>
+            <ul class="mb-0 ps-3">@foreach($errors->messages() as $key => $messages)<li><a href="#{{ str_replace('.', '-', $key) }}">{{ $messages[0] }}</a></li>@endforeach</ul>
+        </div>
+    @endif
     @yield('content')
 </main>
 </body>

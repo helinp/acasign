@@ -45,23 +45,32 @@ class DocumentController extends Controller
             'type' => ['nullable', 'string', 'max:80'],
             'role' => ['nullable', 'in:requester,signer'],
             'status' => ['nullable', 'in:'.implode(',', array_keys(self::INDEX_TABS))],
+            'sort' => ['nullable', 'in:recent,oldest,title,deadline'],
         ]);
         $tab = $filters['status'] ?? 'signed';
+        $sort = $filters['sort'] ?? 'recent';
         $user = $request->user();
         $email = mb_strtolower($user->email);
         $involved = fn ($query) => $query->where('signer_email', $email);
 
-        $documents = Document::query()
-            ->with(['requester', 'signatureRequests'])
-            ->whereIn('status', self::INDEX_TABS[$tab])
+        // Mêmes filtres (rôle, recherche, type) pour la liste et les compteurs des onglets.
+        $filtered = fn () => Document::query()
             ->where(fn ($query) => match ($filters['role'] ?? null) {
                 'requester' => $query->where('requester_id', $user->id),
                 'signer' => $query->whereHas('signatureRequests', $involved),
                 default => $query->where('requester_id', $user->id)->orWhereHas('signatureRequests', $involved),
             })
-            ->when($filters['q'] ?? null, fn ($query, string $q) => $query->where('title', 'like', '%'.$q.'%'))
-            ->when($filters['type'] ?? null, fn ($query, string $type) => $query->where('document_type', $type))
-            ->orderByDesc($tab === 'signed' ? 'completed_at' : 'created_at')
+            ->when($filters['q'] ?? null, fn ($query, string $q) => $query->whereRaw('LOWER(title) LIKE ?', ['%'.mb_strtolower($q).'%']))
+            ->when($filters['type'] ?? null, fn ($query, string $type) => $query->where('document_type', $type));
+
+        $dateColumn = $tab === 'signed' ? 'completed_at' : 'created_at';
+        $documents = $filtered()
+            ->with(['requester', 'signatureRequests'])
+            ->whereIn('status', self::INDEX_TABS[$tab])
+            ->when($sort === 'recent', fn ($query) => $query->orderByDesc($dateColumn))
+            ->when($sort === 'oldest', fn ($query) => $query->orderBy($dateColumn))
+            ->when($sort === 'title', fn ($query) => $query->orderBy('title'))
+            ->when($sort === 'deadline', fn ($query) => $query->orderBy('expires_at'))
             ->paginate(25)
             ->withQueryString();
 
@@ -69,6 +78,8 @@ class DocumentController extends Controller
             'documents' => $documents,
             'filters' => $filters,
             'tab' => $tab,
+            'sort' => $sort,
+            'counts' => collect(self::INDEX_TABS)->map(fn (array $statuses) => $filtered()->whereIn('status', $statuses)->count()),
             'documentTypes' => DocumentType::orderBy('name')->pluck('name'),
         ]);
     }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Document;
 use App\Models\SignatureRequest;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -36,6 +37,41 @@ class SignedDocumentsTest extends TestCase
 
         $this->actingAs($requester)->get(route('documents.index', ['status' => 'pending']))
             ->assertOk()->assertSee('Document en cours')->assertDontSee('Contrat signé');
+    }
+
+    public function test_tabs_show_counts_and_title_sort(): void
+    {
+        $requester = User::factory()->create();
+        $this->document($requester, 'Zèbre', 'signed');
+        $this->document($requester, 'Avenant', 'signed');
+        $this->document($requester, 'En attente', 'pending');
+
+        $response = $this->actingAs($requester)->get(route('documents.index', ['sort' => 'title']))->assertOk();
+
+        $response->assertSeeInOrder(['Signés', '2', 'En cours', '1']);
+        $response->assertSeeInOrder(['Avenant', 'Zèbre']);
+    }
+
+    public function test_search_ignores_case(): void
+    {
+        $requester = User::factory()->create();
+        $this->document($requester, 'Préavis de GRÈVE', 'signed');
+
+        $this->actingAs($requester)->get(route('documents.index', ['q' => 'préavis']))->assertSee('Préavis de GRÈVE');
+    }
+
+    public function test_journal_shows_readable_labels_and_folds_consultations(): void
+    {
+        $requester = User::factory()->create();
+        $document = $this->document($requester, 'Contrat', 'signed');
+        $audit = app(AuditService::class);
+        $audit->record('signature.signed', $document, $requester, ['method' => 'eid']);
+        $audit->record('document.viewed', $document, $requester);
+
+        $this->actingAs($requester)->get(route('documents.show', $document))
+            ->assertSee('Signé avec la carte eID')
+            ->assertSee('Consultations et téléchargements (1)')
+            ->assertDontSee('signature · signed');
     }
 
     public function test_signed_document_downloads_with_signed_suffix(): void

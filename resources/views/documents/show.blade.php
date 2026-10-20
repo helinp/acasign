@@ -28,10 +28,26 @@
         @endif
     </div>
 </div><aside class="col-lg-4">
-    <div class="band">Journal</div>
-    <div class="panel"><div class="proof-rail">
-        @foreach($document->auditEvents->sortByDesc('created_at') as $event)<div class="proof-event"><strong class="d-block">{{ str_replace('.', ' · ', $event->event) }}</strong><span class="small text-muted">{{ $event->created_at->format('d/m/Y H:i') }} · {{ $event->actor?->name ?? 'Système' }}</span><code class="d-block">{{ Str::limit($event->hash, 22) }}</code></div>@endforeach
-    </div></div>
+    @php($events = $document->auditEvents->sortByDesc('created_at'))
+    @php($routine = $events->filter->isRoutine())
+    <div class="band">Journal de preuve</div>
+    <div class="panel">
+        <ol class="proof-rail list-unstyled mb-0">
+            @foreach($events->reject->isRoutine() as $event)
+                <li class="proof-event"><strong class="d-block">{{ $event->label() }}</strong><span class="small text-muted"><time datetime="{{ $event->created_at->toIso8601String() }}">{{ $event->created_at->format('d/m/Y H:i') }}</time> · {{ $event->actor?->name ?? 'Système' }}</span></li>
+            @endforeach
+        </ol>
+        @if($routine->isNotEmpty())
+            <details class="mt-2 small">
+                <summary>Consultations et téléchargements ({{ $routine->count() }})</summary>
+                <ul class="list-unstyled mt-2 mb-0">@foreach($routine as $event)<li>{{ $event->label() }} · {{ $event->created_at->format('d/m/Y H:i') }} · {{ $event->actor?->name ?? 'Système' }}</li>@endforeach</ul>
+            </details>
+        @endif
+        <details class="mt-2 small">
+            <summary>Détails techniques (empreintes)</summary>
+            <ul class="list-unstyled mt-2 mb-0">@foreach($events as $event)<li><code class="hash">{{ $event->event }} · {{ $event->hash }}</code></li>@endforeach</ul>
+        </details>
+    </div>
 </aside></div>
 <div class="modal fade" id="revokeModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="post" action="{{ route('documents.revoke',$document) }}">@csrf
     <div class="band">Révoquer</div>
