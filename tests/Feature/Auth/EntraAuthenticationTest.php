@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Services\InternalIdentityService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -21,6 +22,23 @@ class EntraAuthenticationTest extends TestCase
         $response->assertRedirectContains('response_type=code');
         $response->assertRedirectContains('code_challenge_method=S256');
         $this->assertNotEmpty(session('oidc_nonce'));
+    }
+
+    public function test_failed_token_exchange_returns_to_login_with_a_message(): void
+    {
+        config(['services.entra.tenant_id' => 'tenant', 'services.entra.client_id' => 'client', 'services.entra.client_secret' => 'wrong', 'services.entra.redirect' => 'https://signature.example/auth/entra/callback']);
+        Http::fake(['login.microsoftonline.com/*' => Http::response(['error' => 'invalid_client', 'error_description' => 'AADSTS7000215: Invalid client secret provided.'], 401)]);
+
+        $this->withSession(['oidc_state' => 'etat', 'oidc_verifier' => 'v', 'oidc_nonce' => 'n'])
+            ->get('/auth/entra/callback?code=abc&state=etat')
+            ->assertRedirect(route('login'))->assertSessionHasErrors('entra');
+        $this->assertGuest();
+    }
+
+    public function test_error_returned_by_microsoft_is_shown_on_login(): void
+    {
+        $this->get('/auth/entra/callback?error=access_denied&error_description=AADSTS50105')
+            ->assertRedirect(route('login'))->assertSessionHasErrors('entra');
     }
 
     public function test_student_and_external_accounts_are_rejected(): void

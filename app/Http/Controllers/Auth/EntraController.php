@@ -9,8 +9,10 @@ use App\Services\AuditService;
 use App\Services\EntraOidcService;
 use App\Services\InternalIdentityService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class EntraController extends Controller
 {
@@ -21,8 +23,20 @@ class EntraController extends Controller
 
     public function callback(Request $request, EntraOidcService $entra, InternalIdentityService $identities, AuditService $audit): RedirectResponse
     {
+        if ($request->filled('error')) {
+            Log::warning('Connexion Entra refusée par Microsoft.', ['error' => $request->string('error')->toString(), 'description' => $request->string('error_description')->limit(500)->toString()]);
+
+            return redirect()->route('login')->withErrors(['entra' => 'Microsoft a refusé la connexion ('.$request->string('error')->limit(60).'). Réessayez ou contactez l’administrateur.']);
+        }
         $request->validate(['code' => ['required', 'string'], 'state' => ['required', 'string']]);
-        $claims = $entra->exchangeAndValidate($request->string('code')->toString(), $request->string('state')->toString());
+        try {
+            $claims = $entra->exchangeAndValidate($request->string('code')->toString(), $request->string('state')->toString());
+        } catch (\Throwable $exception) {
+            // Détail (code AADSTS, réponse de Microsoft) dans le journal ; message neutre pour l'utilisateur.
+            Log::error('Échec de la connexion Entra.', ['exception' => $exception->getMessage(), 'response' => $exception instanceof RequestException ? $exception->response->body() : null]);
+
+            return redirect()->route('login')->withErrors(['entra' => 'La connexion Microsoft a échoué. Réessayez ; si le problème persiste, contactez l’administrateur.']);
+        }
         $email = $identities->normalizeAndValidate($claims['preferred_username'] ?? $claims['email'] ?? '');
         $bootstrapAdmin = mb_strtolower((string) config('services.entra.bootstrap_admin_email'));
 
