@@ -1,0 +1,41 @@
+# Reverse proxy Traefik : une seule instance par serveur, partagée par toutes les applications.
+# Déployer cette stack AVANT AcaSign (Portainer : Stacks › Add stack, chemin docker/traefik/docker-compose.yml).
+# Variables : ACME_EMAIL (obligatoire), TRAEFIK_NETWORK (défaut « proxy »).
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=${TRAEFIK_NETWORK:-proxy}
+      # HTTP redirigé vers HTTPS
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      # Certificats Let's Encrypt (resolver « letsencrypt », cf. TRAEFIK_CERT_RESOLVER d'AcaSign)
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL requis}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      # Défi HTTP : le nom (SIGNATURE_HOST) doit être joignable depuis Internet sur le port 80.
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      # Serveur interne non exposé : remplacer la ligne précédente par un défi DNS, ex. OVH ou Cloudflare,
+      # et fournir les identifiants du fournisseur en variables (voir doc Traefik « ACME DNS providers ») :
+      # - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=ovh
+      - --log.level=WARN
+      - --accesslog=false
+      - --api.dashboard=false
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Lecture seule : Traefik découvre les conteneurs étiquetés traefik.enable=true.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /srv/docker/traefik/letsencrypt:/letsencrypt
+    networks: [proxy]
+    security_opt: [no-new-privileges:true]
+
+networks:
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

@@ -65,6 +65,8 @@ Limites actuelles : pas de champs à compléter sur ces documents ; niveau `PAdE
 
 Pour Portainer avec Docker Standalone, pousser le code dans un dépôt Git privé puis créer une stack depuis ce dépôt avec `docker-compose.portainer.yml`. Charger `.env.example` dans les variables de la stack : Portainer les fournit aux services via `stack.env`. Ne jamais versionner `.env`, `stack.env` ni le contenu de `secrets/`.
 
+Sans reverse proxy existant, déployer d'abord la stack Traefik fournie (`docker/traefik/docker-compose.yml`, variable `ACME_EMAIL`) après avoir créé le réseau `proxy` et le dossier `/srv/docker/traefik/letsencrypt`. Le défi HTTP de Let's Encrypt exige que `SIGNATURE_HOST` soit joignable depuis Internet sur le port 80 ; pour un serveur purement interne, utiliser le défi DNS (commenté dans le fichier).
+
 Préparer une fois le serveur Docker :
 
 ```sh
