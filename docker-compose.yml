@@ -55,7 +55,7 @@ services:
       migrate: { condition: service_completed_successfully }
     volumes: *app_volumes
     secrets: *app_secrets
-    networks: [backend, proxy]
+    networks: [backend, proxy, egress]
     read_only: true
     tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/sessions:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
     cap_drop: [ALL]
@@ -85,7 +85,7 @@ services:
       migrate: { condition: service_completed_successfully }
     volumes: *app_volumes
     secrets: *app_secrets
-    networks: [backend]
+    networks: [backend, egress]  # egress : envoi des e-mails (SMTP), webhooks Teams/Telegram/API
     read_only: true
     tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
     cap_drop: [ALL]
@@ -100,7 +100,7 @@ services:
       migrate: { condition: service_completed_successfully }
     volumes: *app_volumes
     secrets: *app_secrets
-    networks: [backend]
+    networks: [backend, egress]  # egress : envoi des e-mails (SMTP), webhooks Teams/Telegram/API
     read_only: true
     tmpfs: [/tmp, "/var/www/html/storage/framework/cache:uid=33,gid=33,mode=0700", "/var/www/html/storage/framework/views:uid=33,gid=33,mode=0700"]
     cap_drop: [ALL]
