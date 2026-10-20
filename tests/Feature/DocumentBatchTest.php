@@ -21,18 +21,18 @@ class DocumentBatchTest extends TestCase
         parent::setUp();
         Queue::fake([DispatchDocumentNotification::class]);
         Storage::fake('local');
-        config(['services.entra.allowed_domains' => ['acarts.be']]);
+        config(['services.entra.allowed_domains' => ['ecole.test']]);
     }
 
     public function test_several_pdfs_create_one_document_each_in_the_same_batch(): void
     {
-        $sender = User::factory()->create(['email' => 'rh@acarts.be', 'can_send' => true]);
+        $sender = User::factory()->create(['email' => 'rh@ecole.test', 'can_send' => true]);
 
         $response = $this->actingAs($sender)->post(route('documents.store'), [
             'title' => 'Grève 12 mars',
             'document_type' => 'Grève',
             'documents' => [$this->pdf('equipe-a.pdf'), $this->pdf('equipe-b.pdf')],
-            'signers' => ['prof@acarts.be'],
+            'signers' => ['prof@ecole.test'],
         ]);
 
         $documents = Document::with('signatureRequests')->orderBy('title')->get();
@@ -40,7 +40,7 @@ class DocumentBatchTest extends TestCase
         $this->assertSame(['Grève 12 mars — equipe-a', 'Grève 12 mars — equipe-b'], $documents->pluck('title')->all());
         $this->assertNotNull($documents[0]->batch_id);
         $this->assertSame($documents[0]->batch_id, $documents[1]->batch_id);
-        $this->assertSame(['prof@acarts.be'], $documents[1]->signatureRequests->pluck('signer_email')->all());
+        $this->assertSame(['prof@ecole.test'], $documents[1]->signatureRequests->pluck('signer_email')->all());
         $this->assertNotEmpty($documents[0]->page_sizes);
         $response->assertRedirect(route('documents.edit', $documents[0]));
 
@@ -49,14 +49,14 @@ class DocumentBatchTest extends TestCase
 
     public function test_requester_can_sign_alone(): void
     {
-        $sender = User::factory()->create(['email' => 'direction@acarts.be', 'can_send' => true]);
+        $sender = User::factory()->create(['email' => 'direction@ecole.test', 'can_send' => true]);
 
         $this->actingAs($sender)->post(route('documents.store'), [
             'title' => 'Attestation', 'document_type' => 'Doc12', 'documents' => [$this->pdf('attestation.pdf')], 'self_sign' => 1, 'signers' => [null],
         ])->assertSessionHasNoErrors();
 
         $document = Document::with('signatureRequests')->sole();
-        $this->assertSame(['direction@acarts.be'], $document->signatureRequests->pluck('signer_email')->all());
+        $this->assertSame(['direction@ecole.test'], $document->signatureRequests->pluck('signer_email')->all());
         $this->actingAs($sender)->get(route('documents.edit', $document))
             ->assertSee(route('signatures.show', $document->signatureRequests->first()), false)
             ->assertSee('Terminer et signer');
@@ -76,7 +76,7 @@ class DocumentBatchTest extends TestCase
     public function test_document_type_requiring_eid_switches_signature_method(): void
     {
         DocumentType::where('name', 'CAD')->update(['requires_eid' => true]);
-        $sender = User::factory()->create(['email' => 'rh@acarts.be', 'can_send' => true]);
+        $sender = User::factory()->create(['email' => 'rh@ecole.test', 'can_send' => true]);
 
         $this->actingAs($sender)->post(route('documents.store'), [
             'title' => 'CAD', 'document_type' => 'CAD', 'documents' => [$this->pdf('cad.pdf')], 'self_sign' => 1,

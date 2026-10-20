@@ -22,7 +22,7 @@ class NotificationPreferencesTest extends TestCase
             'mail.default' => 'array',
             'services.teams.webhook_url' => null,
             'services.telegram' => ['bot_token' => null, 'chat_id' => null],
-            'services.acanet.webhook_url' => null,
+            'services.api.webhook_url' => null,
         ]);
         Http::fake();
     }
@@ -40,20 +40,20 @@ class NotificationPreferencesTest extends TestCase
 
     public function test_signers_who_opted_out_do_not_receive_the_signing_request(): void
     {
-        $requester = User::factory()->create(['email' => 'rh@acarts.be']);
-        User::factory()->create(['email' => 'refus@acarts.be', 'notify_to_sign' => false]);
-        User::factory()->create(['email' => 'accord@acarts.be']);
-        $document = $this->document($requester, ['refus@acarts.be', 'accord@acarts.be', 'sans-compte@acarts.be']);
+        $requester = User::factory()->create(['email' => 'rh@ecole.test']);
+        User::factory()->create(['email' => 'refus@ecole.test', 'notify_to_sign' => false]);
+        User::factory()->create(['email' => 'accord@ecole.test']);
+        $document = $this->document($requester, ['refus@ecole.test', 'accord@ecole.test', 'sans-compte@ecole.test']);
 
         (new DispatchDocumentNotification($document->id, 'document.requested'))->handle();
 
-        $this->assertEqualsCanonicalizing(['accord@acarts.be', 'sans-compte@acarts.be'], $this->recipients());
+        $this->assertEqualsCanonicalizing(['accord@ecole.test', 'sans-compte@ecole.test'], $this->recipients());
     }
 
     public function test_signing_request_email_links_directly_to_the_recipient_signature_page(): void
     {
-        $requester = User::factory()->create(['email' => 'rh@acarts.be']);
-        $document = $this->document($requester, ['prof@acarts.be']);
+        $requester = User::factory()->create(['email' => 'rh@ecole.test']);
+        $document = $this->document($requester, ['prof@ecole.test']);
 
         (new DispatchDocumentNotification($document->id, 'document.requested'))->handle();
 
@@ -63,8 +63,8 @@ class NotificationPreferencesTest extends TestCase
 
     public function test_requester_who_opted_out_is_not_told_about_signatures(): void
     {
-        $requester = User::factory()->create(['email' => 'rh@acarts.be', 'notify_signed' => false]);
-        $document = $this->document($requester, ['prof@acarts.be']);
+        $requester = User::factory()->create(['email' => 'rh@ecole.test', 'notify_signed' => false]);
+        $document = $this->document($requester, ['prof@ecole.test']);
 
         (new DispatchDocumentNotification($document->id, 'signature.signed'))->handle();
 
@@ -73,12 +73,12 @@ class NotificationPreferencesTest extends TestCase
 
     public function test_rejection_is_always_sent_even_when_notifications_are_off(): void
     {
-        $requester = User::factory()->create(['email' => 'rh@acarts.be', 'notify_signed' => false, 'notify_to_sign' => false]);
-        $document = $this->document($requester, ['prof@acarts.be']);
+        $requester = User::factory()->create(['email' => 'rh@ecole.test', 'notify_signed' => false, 'notify_to_sign' => false]);
+        $document = $this->document($requester, ['prof@ecole.test']);
 
         (new DispatchDocumentNotification($document->id, 'signature.rejected'))->handle();
 
-        $this->assertSame(['rh@acarts.be'], $this->recipients());
+        $this->assertSame(['rh@ecole.test'], $this->recipients());
     }
 
     /**

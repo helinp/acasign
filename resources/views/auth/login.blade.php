@@ -3,7 +3,7 @@
 @section('main-class', '')
 @section('content')
 <div class="login"><div class="login__box">
-    <div class="band">Signature de documents</div>
+    <div class="band">{{ $appSubtitle }}</div>
     <div class="login__body">
         <div class="brand mb-4">
             @if($logoUrl)<img src="{{ $logoUrl }}" alt="">@endif

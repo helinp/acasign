@@ -23,14 +23,14 @@ class DocumentWorkflowTest extends TestCase
     {
         Queue::fake([DispatchDocumentNotification::class]);
         Storage::fake('local');
-        config(['services.entra.allowed_domains' => ['acarts.be']]);
-        $sender = User::factory()->create(['email' => 'rh@acarts.be', 'can_send' => true]);
+        config(['services.entra.allowed_domains' => ['ecole.test']]);
+        $sender = User::factory()->create(['email' => 'rh@ecole.test', 'can_send' => true]);
 
         $response = $this->actingAs($sender)->post('/documents', [
             'title' => 'Avenant 2026',
             'document' => UploadedFile::fake()->createWithContent('avenant.pdf', $this->pdfBytes()),
             'document_type' => 'Doc12',
-            'signers' => ['collaborateur@acarts.be'],
+            'signers' => ['collaborateur@ecole.test'],
             'expires_at' => now()->addDays(15)->format('Y-m-d'),
         ]);
 
@@ -39,7 +39,7 @@ class DocumentWorkflowTest extends TestCase
         $this->assertSame('pending', $document->status);
         $this->assertSame(1, $document->page_count);
         $this->assertTrue(Storage::disk('local')->exists($document->file_path));
-        $this->assertDatabaseHas('signature_requests', ['document_id' => $document->id, 'signer_email' => 'collaborateur@acarts.be']);
+        $this->assertDatabaseHas('signature_requests', ['document_id' => $document->id, 'signer_email' => 'collaborateur@ecole.test']);
         Queue::assertPushed(DispatchDocumentNotification::class);
     }
 
@@ -50,14 +50,14 @@ class DocumentWorkflowTest extends TestCase
         }
         Queue::fake([DispatchDocumentNotification::class]);
         Storage::fake('local');
-        config(['services.entra.allowed_domains' => ['acarts.be']]);
-        $sender = User::factory()->create(['email' => 'rh@acarts.be', 'can_send' => true]);
+        config(['services.entra.allowed_domains' => ['ecole.test']]);
+        $sender = User::factory()->create(['email' => 'rh@ecole.test', 'can_send' => true]);
 
         $response = $this->actingAs($sender)->post('/documents', [
             'title' => 'PDF 1.5',
             'document' => UploadedFile::fake()->createWithContent('compresse.pdf', $this->compressedPdfBytes()),
             'document_type' => 'Doc12',
-            'signers' => ['collaborateur@acarts.be'],
+            'signers' => ['collaborateur@ecole.test'],
             'expires_at' => now()->addDays(15)->format('Y-m-d'),
         ]);
 
@@ -69,14 +69,14 @@ class DocumentWorkflowTest extends TestCase
     {
         Process::fake();
         Storage::fake('local');
-        config(['services.entra.allowed_domains' => ['acarts.be']]);
-        $sender = User::factory()->create(['email' => 'rh@acarts.be', 'can_send' => true]);
+        config(['services.entra.allowed_domains' => ['ecole.test']]);
+        $sender = User::factory()->create(['email' => 'rh@ecole.test', 'can_send' => true]);
 
         $response = $this->actingAs($sender)->from(route('documents.create'))->post('/documents', [
             'title' => 'PDF illisible',
             'document' => UploadedFile::fake()->createWithContent('illisible.pdf', "%PDF-1.4\n%%EOF corrompu"),
             'document_type' => 'Doc12',
-            'signers' => ['collaborateur@acarts.be'],
+            'signers' => ['collaborateur@ecole.test'],
             'expires_at' => now()->addDays(15)->format('Y-m-d'),
         ]);
 
@@ -97,7 +97,7 @@ class DocumentWorkflowTest extends TestCase
     public function test_signer_can_open_signature_page(): void
     {
         $requester = User::factory()->create();
-        $signer = User::factory()->create(['email' => 'signataire@acarts.be']);
+        $signer = User::factory()->create(['email' => 'signataire@ecole.test']);
         $document = Document::create([
             'id' => (string) Str::uuid(), 'verification_code' => Str::random(48), 'requester_id' => $requester->id,
             'title' => 'Avenant à signer', 'status' => 'pending', 'original_name' => 'avenant.pdf',
@@ -125,7 +125,7 @@ class DocumentWorkflowTest extends TestCase
             'file_path' => 'documents/private/current.pdf', 'file_size' => 100, 'page_count' => 1,
             'sha256' => str_repeat('a', 64), 'expires_at' => now()->addDay(),
         ]);
-        SignatureRequest::create(['document_id' => $document->id, 'signer_email' => 'signataire@acarts.be']);
+        SignatureRequest::create(['document_id' => $document->id, 'signer_email' => 'signataire@ecole.test']);
 
         $this->actingAs($outsider)->get(route('documents.show', $document))->assertForbidden();
         $this->actingAs($outsider)->get(route('documents.file', $document))->assertForbidden();

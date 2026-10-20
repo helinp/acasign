@@ -25,7 +25,7 @@ class DevLoginController extends Controller
         abort_unless(self::isEnabled(), 404);
 
         $data = $request->validate(['account' => ['required', 'string', 'in:'.implode(',', array_keys(DevUserSeeder::ACCOUNTS))]]);
-        $user = User::query()->where('email', DevUserSeeder::ACCOUNTS[$data['account']]['email'])->first();
+        $user = User::query()->where('email', DevUserSeeder::emailFor($data['account']))->first();
         abort_if($user === null, 404, 'Compte de démonstration absent : lancez php artisan db:seed --class=DevUserSeeder.');
         abort_if($user->disabled_at, 403, 'Ce compte est désactivé dans l’application.');
 

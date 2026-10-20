@@ -35,7 +35,7 @@ class SignatureTextTest extends TestCase
 
     public function test_user_can_set_first_name_last_name_and_job_title(): void
     {
-        $user = User::factory()->create(['name' => 'DUPONT Marie (ACARTS)']);
+        $user = User::factory()->create(['name' => 'DUPONT Marie (ADAV)']);
 
         $this->actingAs($user)->put(route('profile.update'), ['first_name' => 'Marie', 'last_name' => 'Dupont', 'job_title' => 'Directrice'])
             ->assertSessionHasNoErrors();

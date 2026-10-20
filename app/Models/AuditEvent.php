@@ -32,7 +32,7 @@ class AuditEvent extends Model
      */
     private const LABELS = [
         'document.created' => 'Demande créée',
-        'api.document.created' => 'Demande créée (Acanet)',
+        'api.document.created' => 'Demande créée (API)',
         'document.placements.updated' => 'Placement des signatures modifié',
         'document.field.created' => 'Champ à compléter ajouté',
         'document.field.deleted' => 'Champ à compléter retiré',
@@ -41,9 +41,9 @@ class AuditEvent extends Model
         'document.reminded' => 'Rappel envoyé',
         'document.completed' => 'Document entièrement signé',
         'document.cancelled' => 'Demande annulée',
-        'api.document.cancelled' => 'Demande annulée (Acanet)',
+        'api.document.cancelled' => 'Demande annulée (API)',
         'document.revoked' => 'Document révoqué',
-        'api.document.revoked' => 'Document révoqué (Acanet)',
+        'api.document.revoked' => 'Document révoqué (API)',
         'document.expired' => 'Demande expirée',
         'document.file.purged' => 'Fichier supprimé (fin de conservation)',
         'signature.signed' => 'Signé',

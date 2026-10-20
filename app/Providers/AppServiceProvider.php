@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'entityName' => Setting::entityName(),
                 'shortName' => Setting::shortName(),
+                'appSubtitle' => Setting::subtitle(),
+                'themeCss' => Setting::themeCss(),
+                'contactEmail' => Setting::contactEmail(),
+                'footerText' => Setting::footerText(),
                 'logoUrl' => $logoPath ? route('branding.logo', ['v' => substr(md5($logoPath), 0, 8)]) : null,
                 'toSignCount' => auth()->check()
                     ? SignatureRequest::query()->where('signer_email', mb_strtolower(auth()->user()->email))->where('status', 'pending')

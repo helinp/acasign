@@ -126,7 +126,7 @@ class DocumentFieldTest extends TestCase
     private function pendingDocument(): array
     {
         $requester = User::factory()->create(['can_send' => true]);
-        $signer = User::factory()->create(['email' => 'signataire@acarts.be']);
+        $signer = User::factory()->create(['email' => 'signataire@ecole.test']);
         $document = Document::create([
             'id' => (string) Str::uuid(), 'verification_code' => Str::random(48), 'requester_id' => $requester->id,
             'title' => 'Formulaire', 'status' => 'pending', 'original_name' => 'formulaire.pdf',

@@ -6,8 +6,9 @@
 @import '@fontsource/space-grotesk/latin-600.css';
 @import '@fontsource/space-grotesk/latin-700.css';
 
-/* Thème repris du site ACARTS! (wp-theme-acarts), appliqué à Tabler :
-   structure en noir/gris, marque en fuchsia, angles droits, majuscules sur les boutons.
+/* Thème par défaut appliqué à Tabler : structure en noir/gris, marque en couleur vive, angles droits,
+   majuscules sur les boutons. Les couleurs d'action (--ac-action) et de marque (--ac-pink) sont
+   personnalisables dans Administration › Réglages (variables réinjectées dans <head>).
 
    Code visuel unique de l'interactivité — le violet --ac-action est réservé à ce qui se clique :
    1. Lien (mène ailleurs)        → texte violet souligné ; icône ↗ s'il s'ouvre dans un nouvel onglet.
@@ -25,7 +26,7 @@
     --ac-jaune: #FFD400;
     --ac-rouge: #D62F1F;
     --ac-noir: #151419;
-    /* Couleur réservée aux liens et actions (contraste 7,6:1 sur blanc). Rien d'autre ne l'utilise. */
+    /* Couleur réservée aux liens et actions (contraste 8:1 sur blanc). Rien d'autre ne l'utilise. */
     --ac-action: #4B2AD6;
     --ac-action-survol: #3A1FB0;
     --ac-action-fond: rgba(75, 42, 214, .08);
@@ -35,7 +36,7 @@
     --ac-fond: #F7F8FA;
     --ac-placeholder: #DDDCE4;
 
-    /* Tabler → identité ACARTS! */
+    /* Tabler → thème de l'application */
     --tblr-font-sans-serif: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
     --tblr-body-font-family: var(--tblr-font-sans-serif);
     --tblr-body-font-size: .9375rem;
@@ -150,7 +151,7 @@ a, button, summary, [role="button"], tr[data-href], .row-link, label.form-check 
 .steps { --tblr-steps-color: var(--ac-noir); --tblr-steps-inactive-color: var(--ac-placeholder); max-width: 26rem; margin: 0 0 1.5rem; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .steps-counter .step-item::before { border-radius: 0 !important; font-weight: 700; }
 
-/* 2. Boutons : identité ACARTS! (majuscules, gras, angles droits), couleurs Tabler (variables --tblr-btn-*). */
+/* 2. Boutons : identité de l'application (majuscules, gras, angles droits), couleurs Tabler (variables --tblr-btn-*). */
 .btn { --tblr-btn-font-size: 13px; --tblr-btn-font-weight: 700; --tblr-btn-padding-x: 1.1rem; --tblr-btn-padding-y: .6rem; --tblr-btn-border-width: 2px; --tblr-btn-icon-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; gap: .1rem; letter-spacing: .06em; text-transform: uppercase; }
 .btn-sm { --tblr-btn-font-size: 12.5px; --tblr-btn-padding-x: .7rem; --tblr-btn-padding-y: .35rem; --tblr-btn-icon-size: 1rem; }
 .btn-lg { --tblr-btn-font-size: 14px; --tblr-btn-padding-x: 1.4rem; --tblr-btn-padding-y: .8rem; --tblr-btn-icon-size: 1.35rem; }
@@ -335,6 +336,15 @@ tr[data-href]:hover > * { --tblr-table-bg: var(--ac-action-fond); --tblr-table-b
 .eid-steps li.is-todo { background: #FFF6CC; border-left: 4px solid var(--ac-jaune); }
 
 /* Pied de page, lien d'évitement */
+.foot .container { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1.5rem; }
+.foot a { display: inline-flex; align-items: center; gap: .35em; }
+
+/* Réglages : aperçu des couleurs */
+.theme-preview { --preview-action: var(--ac-action); --preview-brand: var(--ac-pink); display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; padding: 1rem; background: var(--ac-fond); border: 1px dashed var(--ac-placeholder); }
+.theme-preview__brand { color: var(--preview-brand); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.theme-preview__link { color: var(--preview-action); text-decoration: underline; text-underline-offset: .18em; }
+.theme-preview__btn { display: inline-flex; align-items: center; gap: .4em; padding: .5rem 1rem; background: var(--preview-action); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.form-control-color { width: 3.5rem; height: 2.5rem; padding: .2rem; }
 .foot { background: var(--ac-noir); color: #fff; font-size: 12px; padding: 14px 0; margin-top: 3rem; }
 .foot a { color: #fff; }
 .skip-link { position: absolute; left: -9999px; top: 0; z-index: 1000; background: var(--ac-noir); color: #fff; padding: 10px 16px; font-weight: 700; }

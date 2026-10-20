@@ -12,11 +12,15 @@ return [
         'bootstrap_admin_email' => env('BOOTSTRAP_ADMIN_EMAIL'),
     ],
 
-    'acanet' => [
-        'jwt_secret' => env('ACANET_JWT_SECRET'),
-        'jwt_issuer' => env('ACANET_JWT_ISSUER', 'acanet'),
-        'webhook_url' => env('ACANET_WEBHOOK_URL'),
-        'webhook_secret' => env('ACANET_WEBHOOK_SECRET'),
+    /*
+     * API d'intégration (logiciel RH, ERP…) : JWT HS256 entrant et webhook sortant.
+     * Les anciennes variables ACANET_* restent lues si les nouvelles sont absentes.
+     */
+    'api' => [
+        'jwt_secret' => env('API_JWT_SECRET', env('ACANET_JWT_SECRET')),
+        'jwt_issuer' => env('API_JWT_ISSUER', env('ACANET_JWT_ISSUER', 'integration')),
+        'webhook_url' => env('API_WEBHOOK_URL', env('ACANET_WEBHOOK_URL')),
+        'webhook_secret' => env('API_WEBHOOK_SECRET', env('ACANET_WEBHOOK_SECRET')),
     ],
 
     'teams' => ['webhook_url' => env('TEAMS_WEBHOOK_URL')],

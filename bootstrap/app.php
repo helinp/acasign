@@ -3,7 +3,7 @@
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureCanSend;
-use App\Http\Middleware\VerifyAcanetJwt;
+use App\Http\Middleware\VerifyApiJwt;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'can.send' => EnsureCanSend::class,
-            'acanet.jwt' => VerifyAcanetJwt::class,
+            'api.jwt' => VerifyApiJwt::class,
             'account.active' => EnsureAccountActive::class,
         ]);
 

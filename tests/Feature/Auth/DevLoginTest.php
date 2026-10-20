@@ -48,14 +48,14 @@ class DevLoginTest extends TestCase
         $this->get('/login')->assertSee('Développement uniquement');
 
         $this->post('/dev/login', ['account' => 'admin'])->assertRedirect(route('dashboard'));
-        $admin = User::query()->where('email', 'dev.admin@acarts.be')->sole();
+        $admin = User::query()->where('email', DevUserSeeder::emailFor('admin'))->sole();
         $this->assertAuthenticatedAs($admin);
         $this->assertTrue($admin->isAdmin());
         $this->assertTrue($admin->can_send);
 
         $this->post('/logout');
         $this->post('/dev/login', ['account' => 'client'])->assertRedirect(route('dashboard'));
-        $client = User::query()->where('email', 'dev.client@acarts.be')->sole();
+        $client = User::query()->where('email', DevUserSeeder::emailFor('client'))->sole();
         $this->assertAuthenticatedAs($client);
         $this->assertFalse($client->isAdmin());
     }
@@ -64,9 +64,9 @@ class DevLoginTest extends TestCase
     {
         $this->app['env'] = 'local';
         config(['app.dev_login_enabled' => true]);
-        User::factory()->create(['email' => 'direction@acarts.be', 'role' => 'admin']);
+        User::factory()->create(['email' => 'direction@ecole.test', 'role' => 'admin']);
 
-        $this->post('/dev/login', ['account' => 'direction@acarts.be'])->assertSessionHasErrors('account');
+        $this->post('/dev/login', ['account' => 'direction@ecole.test'])->assertSessionHasErrors('account');
         $this->assertGuest();
     }
 }

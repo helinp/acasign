@@ -144,7 +144,7 @@ class EidSigningTest extends TestCase
     {
         [$signer, $document, $signatureRequest] = $this->eidDocument();
         $document->update(['signature_method' => 'internal']);
-        $colleague = User::factory()->create(['email' => 'collegue@acarts.be', 'signature_path' => 'signatures/c.enc']);
+        $colleague = User::factory()->create(['email' => 'collegue@ecole.test', 'signature_path' => 'signatures/c.enc']);
         $other = SignatureRequest::create(['document_id' => $document->id, 'signer_id' => $colleague->id, 'signer_email' => $colleague->email, 'signer_name' => $colleague->name]);
 
         $this->actingAs($signer)->get(route('signatures.show', $signatureRequest))
@@ -167,7 +167,7 @@ class EidSigningTest extends TestCase
     {
         [$signer, $document, $signatureRequest] = $this->eidDocument();
         $document->update(['signature_method' => 'internal']);
-        $other = SignatureRequest::create(['document_id' => $document->id, 'signer_email' => 'collegue@acarts.be', 'signer_name' => 'Collègue']);
+        $other = SignatureRequest::create(['document_id' => $document->id, 'signer_email' => 'collegue@ecole.test', 'signer_name' => 'Collègue']);
         DocumentField::create(['document_id' => $document->id, 'signature_request_id' => $other->id, 'type' => 'text', 'page' => 1, 'position_x' => 0.1, 'position_y' => 0.1, 'width' => 0.2, 'height' => 0.03]);
 
         $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
@@ -190,7 +190,7 @@ class EidSigningTest extends TestCase
      */
     private function eidDocument(): array
     {
-        $signer = User::factory()->create(['email' => 'marie.dupont@acarts.be', 'first_name' => 'Marie', 'last_name' => 'Dupont']);
+        $signer = User::factory()->create(['email' => 'marie.dupont@ecole.test', 'first_name' => 'Marie', 'last_name' => 'Dupont']);
         $document = Document::create([
             'id' => (string) Str::uuid(), 'verification_code' => Str::random(48), 'requester_id' => $signer->id,
             'title' => 'CAD 2026', 'status' => 'pending', 'original_name' => 'cad.pdf', 'signature_method' => 'eid',

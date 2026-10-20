@@ -18,7 +18,7 @@ class SignedDocumentsTest extends TestCase
     public function test_requester_and_signer_see_signed_documents_but_not_others(): void
     {
         $requester = User::factory()->create();
-        $signer = User::factory()->create(['email' => 'prof@acarts.be']);
+        $signer = User::factory()->create(['email' => 'prof@ecole.test']);
         $outsider = User::factory()->create();
         $signed = $this->document($requester, 'Grève du 12 mars', 'signed', $signer);
         $this->document($requester, 'Document en cours', 'pending', $signer);
@@ -97,8 +97,8 @@ class SignedDocumentsTest extends TestCase
     public function test_person_filter_matches_signer_name_or_email(): void
     {
         $requester = User::factory()->create();
-        $this->document($requester, 'Contrat Dupont', 'signed', User::factory()->create(['name' => 'Marie Dupont', 'email' => 'marie.dupont@acarts.be']));
-        $this->document($requester, 'Contrat Martin', 'signed', User::factory()->create(['name' => 'Luc Martin', 'email' => 'luc.martin@acarts.be']));
+        $this->document($requester, 'Contrat Dupont', 'signed', User::factory()->create(['name' => 'Marie Dupont', 'email' => 'marie.dupont@ecole.test']));
+        $this->document($requester, 'Contrat Martin', 'signed', User::factory()->create(['name' => 'Luc Martin', 'email' => 'luc.martin@ecole.test']));
 
         $this->actingAs($requester)->get(route('documents.index', ['person' => 'dupont']))
             ->assertOk()->assertSee('Contrat Dupont')->assertDontSee('Contrat Martin');

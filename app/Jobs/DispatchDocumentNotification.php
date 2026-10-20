@@ -51,7 +51,7 @@ class DispatchDocumentNotification implements ShouldQueue
             Http::connectTimeout(3)->timeout(10)->post("https://api.telegram.org/bot{$telegram['bot_token']}/sendMessage", ['chat_id' => $telegram['chat_id'], 'text' => "$subject\n\n$body"])->throw();
         }
 
-        if ($url = config('services.acanet.webhook_url')) {
+        if ($url = config('services.api.webhook_url')) {
             $payload = [
                 'event' => $this->event, 'document_id' => $document->id,
                 'external_reference' => $document->external_reference, 'status' => $document->status,
@@ -63,7 +63,7 @@ class DispatchDocumentNotification implements ShouldQueue
                 $timestamp = (string) now()->timestamp;
                 $response = Http::connectTimeout(3)->timeout(10)->retry(3, 500)->withHeaders([
                     'X-Signature-Timestamp' => $timestamp,
-                    'X-Signature' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$json, (string) config('services.acanet.webhook_secret')),
+                    'X-Signature' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$json, (string) config('services.api.webhook_secret')),
                     'Idempotency-Key' => $delivery->id,
                 ])->withBody($json, 'application/json')->post($url);
                 $delivery->update(['attempts' => 1, 'last_status' => $response->status(), 'delivered_at' => $response->successful() ? now() : null, 'last_error' => $response->successful() ? null : $response->body()]);
