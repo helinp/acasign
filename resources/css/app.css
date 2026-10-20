@@ -1,4 +1,9 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
+/* Police hébergée avec l'application (aucun appel à Google Fonts : RGPD). */
+@import '@fontsource/space-grotesk/latin-400.css';
+@import '@fontsource/space-grotesk/latin-500.css';
+@import '@fontsource/space-grotesk/latin-600.css';
+@import '@fontsource/space-grotesk/latin-700.css';
 
 /* Thème repris du site ACARTS! (wp-theme-acarts) :
    structure en violet, marque en fuchsia, cliquable en noir, angles droits. */
