@@ -8,12 +8,12 @@
 @endphp
 <a class="back" href="{{ url()->previous() !== url()->current() ? url()->previous() : route('documents.index') }}">← Retour</a>
 <div class="row g-4 g-lg-5"><div class="col-lg-8">
-    <p class="eyebrow">{{ $document->document_type ?: 'Document' }} · {{ $document->requester->name }} · avant le {{ $document->expires_at?->format('d/m/Y') }}</p>
+    <p class="eyebrow">{{ $document->document_type ?: 'Document' }}{{ $document->usesEid() ? ' · signature eID' : '' }} · {{ $document->requester->name }} · avant le {{ $document->expires_at?->format('d/m/Y') }}</p>
     <div class="d-flex align-items-start justify-content-between gap-3 mb-3"><h1 class="page-title mb-0">{{ $document->title }}</h1><span class="status-badge status-{{ $document->status }}">{{ $labels[$document->status] ?? $document->status }}</span></div>
     <div class="band">Signataires</div>
     <div class="list-rows mb-3">
         @foreach($document->signatureRequests as $signature)
-            <div><span @class(['num', 'num--done' => $signature->status === 'signed'])>{{ $signature->status === 'signed' ? '✓' : $loop->iteration }}</span><div class="flex-grow-1"><strong>{{ $signature->signer_name }}</strong><div class="small text-muted">{{ $signature->signer_email }}@if($signature->signed_at) · {{ $signature->signed_at->format('d/m/Y H:i') }}@endif</div></div><span class="status-badge status-{{ $signature->status }}">{{ $labels[$signature->status] ?? $signature->status }}</span></div>
+            <div><span @class(['num', 'num--done' => $signature->status === 'signed'])>{{ $signature->status === 'signed' ? '✓' : $loop->iteration }}</span><div class="flex-grow-1"><strong>{{ $signature->signer_name }}</strong><div class="small text-muted">{{ $signature->signer_email }}@if($signature->signed_at) · {{ $signature->signed_at->format('d/m/Y H:i') }}@endif @if($signature->certificate_info) · carte eID : {{ $signature->certificate_info['subject'] ?? '' }}@endif</div></div><span class="status-badge status-{{ $signature->status }}">{{ $labels[$signature->status] ?? $signature->status }}</span></div>
         @endforeach
     </div>
     <div class="d-flex flex-wrap gap-2">

@@ -24,7 +24,7 @@ class SignatureRequest extends Model
     protected function casts(): array
     {
         return [
-            'display_options' => 'array', 'signed_at' => 'datetime',
+            'display_options' => 'array', 'certificate_info' => 'array', 'signed_at' => 'datetime',
             'rejected_at' => 'datetime', 'last_reminded_at' => 'datetime',
             'position_x' => 'float', 'position_y' => 'float',
             'width' => 'float', 'height' => 'float',

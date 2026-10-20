@@ -1,0 +1,11 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+    <!-- Horodatage en ligne (remplace la TSA auto-signée de démonstration de DSS).
+         URL réglable par la variable d'environnement TSA_URL du conteneur. -->
+    <bean id="tspSource" class="eu.europa.esig.dss.service.tsp.OnlineTSPSource">
+        <constructor-arg name="tspServer" value="${tsa.url:http://tsa.belgium.be/connect}" />
+    </bean>
+
+</beans>

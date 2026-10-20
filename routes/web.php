@@ -4,8 +4,8 @@ use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\DevLoginController;
-use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Auth\EntraController;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentFieldController;
@@ -43,6 +43,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::post('/signatures/{signatureRequest}/sign', [SignatureController::class, 'sign'])->name('signatures.sign');
     Route::put('/signatures/{signatureRequest}/position', [SignatureController::class, 'position'])->name('signatures.position');
     Route::post('/signatures/{signatureRequest}/reject', [SignatureController::class, 'reject'])->name('signatures.reject');
+    Route::post('/signatures/{signatureRequest}/eid/prepare', [SignatureController::class, 'eidPrepare'])->middleware('throttle:20,1')->name('signatures.eid.prepare');
+    Route::post('/signatures/{signatureRequest}/eid/failure', [SignatureController::class, 'eidFailure'])->middleware('throttle:30,1')->name('signatures.eid.failure');
+    Route::post('/signatures/{signatureRequest}/eid/finalize', [SignatureController::class, 'eidFinalize'])->middleware('throttle:20,1')->name('signatures.eid.finalize');
     Route::post('/signatures/{signatureRequest}/fields', [SignatureController::class, 'storeField'])->name('signatures.fields.store');
     Route::put('/signatures/{signatureRequest}/fields/{field}', [SignatureController::class, 'updateField'])->name('signatures.fields.update');
     Route::delete('/signatures/{signatureRequest}/fields/{field}', [SignatureController::class, 'destroyField'])->name('signatures.fields.destroy');
@@ -50,6 +53,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/eid-failure', [ProfileController::class, 'eidFailure'])->middleware('throttle:30,1')->name('profile.eid.failure');
+    Route::post('/profile/eid-check', [ProfileController::class, 'eidCheck'])->middleware('throttle:20,1')->name('profile.eid.check');
     Route::get('/profile/signature', [ProfileController::class, 'signatureImage'])->name('profile.signature.show');
     Route::post('/profile/signature', [ProfileController::class, 'storeSignature'])->name('profile.signature.store');
     Route::delete('/profile/signature', [ProfileController::class, 'deleteSignature'])->name('profile.signature.delete');

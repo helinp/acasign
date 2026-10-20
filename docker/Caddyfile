@@ -19,3 +19,6 @@
     }
     php_server
 }
+
+# Sites supplémentaires (ex. HTTPS local pour Web eID, monté par docker-compose.override.yml).
+import /etc/caddy/conf.d/*.caddy

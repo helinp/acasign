@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSignatureImageRequest;
 use App\Services\AuditService;
+use App\Services\EidSigningService;
 use App\Services\EncryptedSignatureStorage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -42,6 +47,35 @@ class ProfileController extends Controller
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    /**
+     * « Tester ma carte » : contrôle le certificat de signature lu sur la carte eID (aucune signature).
+     */
+    public function eidCheck(Request $request, EidSigningService $eid): JsonResponse
+    {
+        $data = $request->validate(['certificate' => ['required', 'string', 'max:20000']]);
+        $info = $eid->certificateInfo($data['certificate']);
+
+        return response()->json([
+            'subject' => $info['subject'],
+            'issuer' => $info['issuer'],
+            'valid_to' => Carbon::parse($info['valid_to'])->format('d/m/Y'),
+        ]);
+    }
+
+    /**
+     * Journalise un échec de Web eID lors du test de carte (diagnostic).
+     */
+    public function eidFailure(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['nullable', 'string', 'max:80'],
+            'message' => ['nullable', 'string', 'max:500'],
+        ]);
+        Log::warning('eID : échec du test de carte', [...$data, 'user_id' => $request->user()->id, 'user_agent' => Str::limit((string) $request->userAgent(), 200)]);
+
+        return response()->json(['logged' => true]);
     }
 
     public function storeSignature(StoreSignatureImageRequest $request, EncryptedSignatureStorage $storage, AuditService $audit): RedirectResponse

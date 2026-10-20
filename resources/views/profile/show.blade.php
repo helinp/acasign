@@ -27,5 +27,6 @@
             @if($user->signature_path)<form method="post" action="{{ route('profile.signature.delete') }}" class="mt-3">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Supprimer l’image</button></form>@endif
         </div>
     </div>
+    <div class="col-12">@include('partials.eid-help', ['mode' => 'always', 'action' => 'test'])</div>
 </div>
 @endsection

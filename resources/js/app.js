@@ -5,6 +5,15 @@ document.querySelectorAll('tr[data-href]').forEach(row => row.addEventListener('
     window.location.href = row.dataset.href;
 }));
 
+// Choix explicite du mode de signature : la fenêtre n'affiche que le bouton correspondant.
+document.querySelectorAll('[data-open-sign]').forEach(button => button.addEventListener('click', () => {
+    document.querySelectorAll('[data-sign-only]').forEach(element => { element.hidden = element.dataset.signOnly !== button.dataset.openSign; });
+}));
+
+if (document.querySelector('[data-eid-help], [data-eid-sign]')) {
+    import('./eid.js');
+}
+
 const stage = document.querySelector('[data-pdf-stage]');
 if (stage) {
     const pdfjsLib = await import('pdfjs-dist');
@@ -70,7 +79,7 @@ if (stage) {
 const signerList = document.querySelector('[data-signer-list]');
 document.querySelector('[data-add-signer]')?.addEventListener('click', () => {
     const row = document.createElement('div'); row.className = 'input-group mb-2';
-    row.innerHTML = '<input class="form-control" type="email" name="signers[]" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" required><button class="btn btn-outline-danger" type="button" aria-label="Retirer">×</button>';
+    row.innerHTML = '<input class="form-control" type="email" name="signers[]" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger" type="button" aria-label="Retirer">×</button>';
     row.querySelector('button').addEventListener('click', () => row.remove()); signerList.appendChild(row); row.querySelector('input').focus();
 });
 document.querySelectorAll('[data-remove-signer]').forEach(button => button.addEventListener('click', () => button.closest('.input-group').remove()));

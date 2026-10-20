@@ -35,3 +35,4 @@ docker-compose.override.yml
 /work
 /secrets/*
 !/secrets/.gitkeep
+/docker/dev-certs
