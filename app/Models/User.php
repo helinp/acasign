@@ -5,14 +5,14 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['entra_oid', 'tenant_id', 'name', 'first_name', 'last_name', 'email', 'job_title', 'role', 'can_send', 'signature_path', 'last_login_at', 'disabled_at'])]
+#[Fillable(['entra_oid', 'tenant_id', 'name', 'first_name', 'last_name', 'email', 'job_title', 'notify_to_sign', 'notify_signed', 'role', 'can_send', 'signature_path', 'last_login_at', 'disabled_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -63,6 +63,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'can_send' => 'boolean',
+            'notify_to_sign' => 'boolean',
+            'notify_signed' => 'boolean',
             'last_login_at' => 'datetime',
             'disabled_at' => 'datetime',
         ];

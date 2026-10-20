@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Document;
+use App\Models\DocumentField;
 use App\Models\SignatureRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -156,7 +157,7 @@ class EidSigningTest extends TestCase
         [$signer, $document, $signatureRequest] = $this->eidDocument();
         $document->update(['signature_method' => 'internal']);
         $other = SignatureRequest::create(['document_id' => $document->id, 'signer_email' => 'collegue@acarts.be', 'signer_name' => 'Collègue']);
-        \App\Models\DocumentField::create(['document_id' => $document->id, 'signature_request_id' => $other->id, 'type' => 'text', 'page' => 1, 'position_x' => 0.1, 'position_y' => 0.1, 'width' => 0.2, 'height' => 0.03]);
+        DocumentField::create(['document_id' => $document->id, 'signature_request_id' => $other->id, 'type' => 'text', 'page' => 1, 'position_x' => 0.1, 'position_y' => 0.1, 'width' => 0.2, 'height' => 0.03]);
 
         $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
             'certificate' => $this->certificate,

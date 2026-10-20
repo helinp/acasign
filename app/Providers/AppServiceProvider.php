@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\SignatureRequest;
 use App\Models\Setting;
+use App\Models\SignatureRequest;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;

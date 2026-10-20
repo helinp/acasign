@@ -3,9 +3,11 @@
 namespace App\Jobs;
 
 use App\Models\Document;
+use App\Models\User;
 use App\Models\WebhookDelivery;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -30,7 +32,7 @@ class DispatchDocumentNotification implements ShouldQueue
         }
 
         [$recipients, $subject, $body] = $this->message($document);
-        foreach ($recipients as $email) {
+        foreach ($this->acceptingRecipients($recipients) as $email) {
             try {
                 Mail::raw($body, fn ($mail) => $mail->to($email)->subject($subject));
             } catch (\Throwable $e) {
@@ -69,6 +71,34 @@ class DispatchDocumentNotification implements ShouldQueue
                 throw $e;
             }
         }
+    }
+
+    /**
+     * Retire les destinataires qui ont refusé ce type d'e-mail dans leur profil.
+     * Les adresses sans compte reçoivent toujours le message (elles n'ont pas de préférence),
+     * et les refus, annulations et révocations sont toujours envoyés.
+     *
+     * @param  list<string>  $recipients
+     * @return list<string>
+     */
+    private function acceptingRecipients(array $recipients): array
+    {
+        $preference = match ($this->event) {
+            'document.requested', 'signature.delegated' => 'notify_to_sign',
+            'signature.signed' => 'notify_signed',
+            default => null,
+        };
+        if ($preference === null || $recipients === []) {
+            return $recipients;
+        }
+        $optedOut = User::query()
+            ->whereIn(DB::raw('LOWER(email)'), array_map('mb_strtolower', $recipients))
+            ->where($preference, false)
+            ->pluck('email')
+            ->map(fn (string $email) => mb_strtolower($email))
+            ->all();
+
+        return array_values(array_filter($recipients, fn (string $email) => ! in_array(mb_strtolower($email), $optedOut, true)));
     }
 
     private function message(Document $document): array
