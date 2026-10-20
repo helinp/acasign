@@ -62,11 +62,19 @@ services:
     security_opt: [no-new-privileges:true]
     labels:
       - traefik.enable=true
-      - traefik.http.routers.signature.rule=Host(`${SIGNATURE_HOST}`)
-      - traefik.http.routers.signature.entrypoints=websecure
-      - traefik.http.routers.signature.tls=true
-      - traefik.http.routers.signature.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      - traefik.http.services.signature.loadbalancer.server.port=8080
+      # Réseau partagé avec Traefik (le conteneur est aussi sur « backend »)
+      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      # HTTP → redirection HTTPS
+      - traefik.http.routers.acasign-http.rule=Host(`${SIGNATURE_HOST}`)
+      - traefik.http.routers.acasign-http.entrypoints=${TRAEFIK_HTTP_ENTRYPOINT:-web}
+      - traefik.http.routers.acasign-http.middlewares=acasign-redirect-https
+      - traefik.http.middlewares.acasign-redirect-https.redirectscheme.scheme=https
+      # HTTPS : certificat par défaut de Traefik (interne ou wildcard) ou resolver ACME
+      # défini sur l'entrypoint (--entrypoints.websecure.http.tls.certresolver=…)
+      - traefik.http.routers.acasign-https.rule=Host(`${SIGNATURE_HOST}`)
+      - traefik.http.routers.acasign-https.entrypoints=${TRAEFIK_HTTPS_ENTRYPOINT:-websecure}
+      - traefik.http.routers.acasign-https.tls=true
+      - traefik.http.services.acasign.loadbalancer.server.port=8080
 
   worker:
     build: .

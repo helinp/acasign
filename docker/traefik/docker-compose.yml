@@ -14,7 +14,8 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
       - --entrypoints.websecure.address=:443
-      # Certificats Let's Encrypt (resolver « letsencrypt », cf. TRAEFIK_CERT_RESOLVER d'AcaSign)
+      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+      # Certificats Let's Encrypt, appliqués à tous les routeurs HTTPS de l'entrypoint
       - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL requis}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       # Défi HTTP : le nom (SIGNATURE_HOST) doit être joignable depuis Internet sur le port 80.
