@@ -50,15 +50,15 @@ class DocumentTypeTest extends TestCase
     {
         DocumentType::where('name', 'CAD')->update(['is_active' => false]);
         $sender = User::factory()->create(['can_send' => true]);
-        User::factory()->create(['email' => 'prof@acarts.be']);
-        User::factory()->create(['email' => 'ancien@acarts.be', 'disabled_at' => now()]);
+        User::factory()->create(['email' => 'prof@ecole.test']);
+        User::factory()->create(['email' => 'ancien@ecole.test', 'disabled_at' => now()]);
 
         $this->actingAs($sender)->get(route('documents.create'))
             ->assertOk()
             ->assertSee('Doc12')
             ->assertDontSee('<option value="CAD"', false)
-            ->assertSee('prof@acarts.be')
-            ->assertDontSee('ancien@acarts.be')
+            ->assertSee('prof@ecole.test')
+            ->assertDontSee('ancien@ecole.test')
             ->assertDontSee('Référence RH');
     }
 
@@ -67,7 +67,7 @@ class DocumentTypeTest extends TestCase
         DocumentType::where('name', 'CAD')->update(['is_active' => false]);
         $sender = User::factory()->create(['can_send' => true]);
 
-        $this->actingAs($sender)->post(route('documents.store'), ['title' => 'Test', 'document_type' => 'CAD', 'signers' => ['prof@acarts.be']])
+        $this->actingAs($sender)->post(route('documents.store'), ['title' => 'Test', 'document_type' => 'CAD', 'signers' => ['prof@ecole.test']])
             ->assertSessionHasErrors('document_type');
     }
 

@@ -71,7 +71,7 @@
 
 <div class="modal fade" id="delegateModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="post" action="{{ route('signatures.delegate',$s) }}">@csrf
     <div class="band"><span class="band__title"><x-icon name="user-share" />Déléguer la signature</span></div>
-    <div class="modal-body"><label class="form-label" for="delegate-email">À</label><input class="form-control" id="delegate-email" type="email" name="email" required placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off">@include('partials.known-users-datalist')</div>
+    <div class="modal-body"><label class="form-label" for="delegate-email">À</label><input class="form-control" id="delegate-email" type="email" name="email" required placeholder="{{ \App\Models\Setting::emailPlaceholder() }}" list="known-users" autocomplete="off">@include('partials.known-users-datalist')</div>
     <div class="modal-footer"><button class="btn btn-ghost-primary" type="button" data-bs-dismiss="modal"><x-icon name="arrow-left" />Retour</button><button class="btn btn-primary"><x-icon name="user-share" />Déléguer</button></div>
 </form></div></div>
 @endsection

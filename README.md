@@ -6,7 +6,7 @@ Application interne de signature simple de documents PDF. Elle utilise exclusive
 
 ## Architecture
 
-- Laravel 13 / PHP 8.4, rendu serveur Blade et Bootstrap 5
+- Laravel 13 / PHP 8.4, rendu serveur Blade et Tabler (Bootstrap 5)
 - PostgreSQL 17, file de tâches Laravel en base
 - PDF.js pour le placement visuel
 - FPDI/TCPDF pour l’aplatissement, l’apposition et le scellement
@@ -99,29 +99,39 @@ Recopier la valeur affichée par `key:generate --show` dans `APP_KEY` du fichier
 
 L’image applicative tourne sans privilège, avec système de fichiers en lecture seule, capacités Linux supprimées et répertoires temporaires en `tmpfs`.
 
+## Personnalisation
+
+L’application n’est liée à aucun établissement. Dans **Administration › Réglages**, un administrateur définit :
+
+- le nom de l’établissement, son nom court, le sous-titre et le logo ;
+- la couleur des liens et boutons et celle du nom (un contraste insuffisant est refusé) ;
+- le domaine utilisé dans les adresses d’exemple, l’e-mail de contact et le texte du pied de page.
+
+Côté serveur : `APP_NAME`, `ENTRA_ALLOWED_DOMAINS` (domaines des comptes autorisés) et `ENTRA_FORBIDDEN_USERNAME_FRAGMENT` (comptes à exclure, par exemple les élèves). Le premier administrateur est désigné par `BOOTSTRAP_ADMIN_EMAIL`.
+
 ## Notifications
 
 Le canal e-mail utilise la configuration Laravel `MAIL_*`; `MAIL_FROM_ADDRESS` peut être l’adresse de la boîte partagée. Teams utilise `TEAMS_WEBHOOK_URL`. Telegram utilise `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID`. Les envois sont exécutés par `worker` avec reprises.
 
-## API Acanet v1
+## API d’intégration v1
 
-Authentification : JWT HS256 dans `Authorization: Bearer`, émetteur `ACANET_JWT_ISSUER` et portée `documents:write`. Générer un jeton de test :
+Pour connecter un logiciel tiers (RH, ERP, gestion des inscriptions…). Authentification : JWT HS256 dans `Authorization: Bearer`, émetteur `API_JWT_ISSUER` et portée `documents:write`. Les anciennes variables `ACANET_*` restent lues si les `API_*` sont absentes. Générer un jeton de test :
 
 ```sh
-php artisan acanet:token --ttl=3600
+php artisan api:token --ttl=3600
 ```
 
 Création idempotente par `external_reference` :
 
 ```sh
-curl -X POST https://signature.acarts.lan/api/v1/documents \
+curl -X POST https://signature.exemple.lan/api/v1/documents \
   -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/json" \
   -F "file=@contrat.pdf" \
   -F "title=Contrat" \
   -F "external_reference=RH-2026-0042" \
-  -F "requester_email=operateur@acarts.be" \
-  -F "signers[0][email]=signataire@acarts.be"
+  -F "requester_email=operateur@exemple.be" \
+  -F "signers[0][email]=signataire@exemple.be"
 ```
 
 Routes disponibles :
@@ -132,7 +142,7 @@ Routes disponibles :
 - `POST /api/v1/documents/{id}/revoke`
 - `GET /api/v1/documents/{id}/download`
 
-Si `ACANET_WEBHOOK_URL` est renseignée, chaque changement est envoyé avec `X-Signature-Timestamp`, `Idempotency-Key` et une signature HMAC `X-Signature`. Le consommateur recalcule `HMAC-SHA256(timestamp + "." + corps JSON, ACANET_WEBHOOK_SECRET)`.
+Si `API_WEBHOOK_URL` est renseignée, chaque changement est envoyé avec `X-Signature-Timestamp`, `Idempotency-Key` et une signature HMAC `X-Signature`. Le consommateur recalcule `HMAC-SHA256(timestamp + "." + corps JSON, API_WEBHOOK_SECRET)`.
 
 ## Exploitation
 

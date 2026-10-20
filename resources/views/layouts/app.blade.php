@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Signatures') · {{ $shortName }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if($themeCss)<style>{!! $themeCss !!}</style>@endif
 </head>
 <body>
 <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -20,7 +21,7 @@
 <header class="head"><div class="container">
     <a class="brand" href="{{ route('dashboard') }}">
         @if($logoUrl)<img src="{{ $logoUrl }}" alt="">@endif
-        <span><span class="brand__name" @if($shortName !== $entityName) title="{{ $entityName }}" @endif>{{ $shortName }}</span><span class="brand__sub">Signature de documents</span></span>
+        <span><span class="brand__name" @if($shortName !== $entityName) title="{{ $entityName }}" @endif>{{ $shortName }}</span><span class="brand__sub">{{ $appSubtitle }}</span></span>
     </a>
     <button class="burger d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="head-nav collapse d-lg-flex" id="mainNav" aria-label="Navigation principale">
@@ -41,5 +42,11 @@
     @endif
     @yield('content')
 </main>
+@if($footerText || $contactEmail)
+<footer class="foot"><div class="container">
+    @if($footerText)<span>{{ $footerText }}</span>@endif
+    @if($contactEmail)<a href="mailto:{{ $contactEmail }}"><x-icon name="mail" />Aide : {{ $contactEmail }}</a>@endif
+</div></footer>
+@endif
 </body>
 </html>

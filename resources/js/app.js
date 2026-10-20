@@ -196,7 +196,7 @@ if (stage) {
 const signerList = document.querySelector('[data-signer-list]');
 document.querySelector('[data-add-signer]')?.addEventListener('click', () => {
     const row = document.createElement('div'); row.className = 'input-group mb-2';
-    row.innerHTML = `<input class="form-control" type="email" name="signers[]" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger btn-icon" type="button" aria-label="Retirer ce signataire" title="Retirer ce signataire">${icon('x')}</button>`;
+    row.innerHTML = `<input class="form-control" type="email" name="signers[]" placeholder="${signerList.dataset.placeholder}" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger btn-icon" type="button" aria-label="Retirer ce signataire" title="Retirer ce signataire">${icon('x')}</button>`;
     row.querySelector('button').addEventListener('click', () => row.remove()); signerList.appendChild(row); row.querySelector('input').focus();
 });
 document.querySelectorAll('[data-remove-signer]').forEach(button => button.addEventListener('click', () => button.closest('.input-group').remove()));
@@ -222,4 +222,17 @@ if (archiveForm) {
     selectAll?.addEventListener('change', () => { rows.forEach(row => { row.checked = selectAll.checked; }); update(); });
     archiveForm.querySelector('[data-archive-all]')?.addEventListener('click', () => rows.forEach(row => { row.checked = false; }));
     update();
+}
+
+// Réglages : aperçu en direct des couleurs choisies.
+const themePreview = document.querySelector('[data-theme-preview]');
+if (themePreview) {
+    document.querySelectorAll('[data-color-preview]').forEach(input => {
+        const apply = () => {
+            themePreview.style.setProperty(input.dataset.colorPreview === 'action' ? '--preview-action' : '--preview-brand', input.value);
+            document.querySelector(`[data-color-value="${input.name}"]`).textContent = input.value.toUpperCase();
+        };
+        input.addEventListener('input', apply);
+        apply();
+    });
 }

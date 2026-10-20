@@ -25,10 +25,10 @@ class EntraAuthenticationTest extends TestCase
 
     public function test_student_and_external_accounts_are_rejected(): void
     {
-        config(['services.entra.allowed_domains' => ['acarts.be'], 'services.entra.forbidden_username_fragment' => '.ELEVE']);
+        config(['services.entra.allowed_domains' => ['ecole.test'], 'services.entra.forbidden_username_fragment' => '.ELEVE']);
         $service = app(InternalIdentityService::class);
-        $this->assertSame('prof@acarts.be', $service->normalizeAndValidate('PROF@acarts.be'));
-        foreach (['prenom.ELEVE@acarts.be', 'guest#EXT#@acarts.be', 'personne@example.net'] as $email) {
+        $this->assertSame('prof@ecole.test', $service->normalizeAndValidate('PROF@ecole.test'));
+        foreach (['prenom.ELEVE@ecole.test', 'guest#EXT#@ecole.test', 'personne@example.net'] as $email) {
             try {
                 $service->normalizeAndValidate($email);
                 $this->fail("$email aurait dû être refusé");

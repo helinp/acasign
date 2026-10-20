@@ -19,15 +19,15 @@ class SettingTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->put(route('admin.settings.update'), [
-            'entity_name' => 'Académie ACARTS!',
+            'entity_name' => 'Académie des Arts du Val',
             'logo' => UploadedFile::fake()->image('logo.png', 200, 80),
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame('Académie ACARTS!', Setting::entityName());
+        $this->assertSame('Académie des Arts du Val', Setting::entityName());
         Storage::disk('local')->assertExists(Setting::logoPath());
 
         auth()->logout();
-        $this->get(route('login'))->assertSee('Académie ACARTS!')->assertSee(route('branding.logo'), false);
+        $this->get(route('login'))->assertSee('Académie des Arts du Val')->assertSee(route('branding.logo'), false);
         $this->get(route('branding.logo'))->assertOk()->assertHeader('Content-Type', 'image/png');
     }
 
@@ -36,14 +36,14 @@ class SettingTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->put(route('admin.settings.update'), [
-            'entity_name' => 'Académie intercommunale de Court-Saint-Étienne',
-            'entity_short_name' => 'ACARTS!',
+            'entity_name' => 'Académie intercommunale des Arts du Val',
+            'entity_short_name' => 'ADAV!',
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame('ACARTS!', Setting::shortName());
-        $this->actingAs($admin)->get(route('dashboard'))->assertSee('<title>Accueil · ACARTS!</title>', false);
+        $this->assertSame('ADAV!', Setting::shortName());
+        $this->actingAs($admin)->get(route('dashboard'))->assertSee('<title>Accueil · ADAV!</title>', false);
         auth()->logout();
-        $this->get(route('login'))->assertSee('Académie intercommunale de Court-Saint-Étienne');
+        $this->get(route('login'))->assertSee('Académie intercommunale des Arts du Val');
     }
 
     public function test_logo_can_be_removed(): void
@@ -67,6 +67,41 @@ class SettingTest extends TestCase
         $this->actingAs($admin)->put(route('admin.settings.update'), [
             'logo' => UploadedFile::fake()->createWithContent('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
         ])->assertSessionHasErrors('logo');
+    }
+
+    public function test_admin_customizes_subtitle_colors_contact_and_footer(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [
+            'app_subtitle' => 'Parapheur numérique',
+            'action_color' => '#0b5394',
+            'brand_color' => '#C2185B',
+            'email_domain' => 'arts-du-val.be',
+            'contact_email' => 'secretariat@arts-du-val.be',
+            'footer_text' => 'Données traitées par le pouvoir organisateur.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get(route('documents.create'))->assertOk()
+            ->assertSee('Parapheur numérique')
+            ->assertSee('--ac-action:#0B5394', false)
+            ->assertSee('--ac-pink:#C2185B', false)
+            ->assertSee('placeholder="prenom.nom@arts-du-val.be"', false)
+            ->assertSee('mailto:secretariat@arts-du-val.be', false)
+            ->assertSee('Données traitées par le pouvoir organisateur.');
+    }
+
+    public function test_too_light_action_color_is_refused_and_colors_can_be_reset(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), ['action_color' => '#FFD400'])->assertSessionHasErrors('action_color');
+        $this->assertSame(Setting::DEFAULT_ACTION_COLOR, Setting::actionColor());
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), ['action_color' => '#0B5394'])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put(route('admin.settings.update'), ['action_color' => '#0B5394', 'reset_colors' => '1'])->assertSessionHasNoErrors();
+        $this->assertSame(Setting::DEFAULT_ACTION_COLOR, Setting::actionColor());
+        $this->assertSame('', Setting::themeCss());
     }
 
     public function test_non_admin_cannot_change_settings(): void
