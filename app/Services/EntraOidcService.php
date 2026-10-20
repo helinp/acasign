@@ -51,8 +51,9 @@ class EntraOidcService
         ])->throw()->json();
 
         $discovery = Http::connectTimeout(3)->timeout(10)->get($this->authority().'/v2.0/.well-known/openid-configuration')->throw()->json();
+        // Les clés publiées par Microsoft n'ont pas de paramètre « alg » : les jetons d'identité Entra sont signés en RS256.
         $jwks = cache()->remember('entra-jwks', 3600, fn () => Http::connectTimeout(3)->timeout(10)->get($discovery['jwks_uri'])->throw()->json());
-        $claims = (array) JWT::decode($response['id_token'], JWK::parseKeySet($jwks));
+        $claims = (array) JWT::decode($response['id_token'], JWK::parseKeySet($jwks, 'RS256'));
 
         throw_unless(($claims['aud'] ?? null) === config('services.entra.client_id'), new \RuntimeException('Audience Entra invalide.'));
         throw_unless(($claims['tid'] ?? null) === config('services.entra.tenant_id'), new \RuntimeException('Tenant Entra invalide.'));
