@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "@popperjs/core": "^2.11.8",
+        "@web-eid/web-eid-library": "^2.1.0",
         "bootstrap": "^5.3.8",
         "pdfjs-dist": "^6.2.108"
     }

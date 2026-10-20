@@ -1,0 +1,8 @@
+# HTTPS local (développement) : Web eID refuse les pages en http://, même sur localhost.
+# Certificat généré avec mkcert (voir README), monté dans /run/dev-certs.
+https://localhost:8443 {
+    tls /run/dev-certs/localhost.pem /run/dev-certs/localhost-key.pem
+    root * /var/www/html/public
+    encode zstd gzip
+    php_server
+}

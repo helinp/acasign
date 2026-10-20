@@ -18,6 +18,7 @@ class DocumentFieldController extends Controller
     public function store(Request $request, Document $document, AuditService $audit): JsonResponse
     {
         $this->authorizeRequester($request, $document);
+        abort_if($document->usesEid(), 422, 'Les champs à compléter ne sont pas disponibles avec la signature eID.');
         $data = $request->validate([
             'type' => ['required', Rule::in(DocumentField::TYPES)],
             'signature_request_id' => ['required', 'uuid', Rule::exists('signature_requests', 'id')->where('document_id', $document->id)->where('status', 'pending')],

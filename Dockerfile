@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS assets
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY resources ./resources
 COPY vite.config.js ./
@@ -27,6 +27,7 @@ WORKDIR /var/www/html
 COPY --from=vendor --chown=www-data:www-data /app ./
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 COPY docker/Caddyfile /etc/caddy/Caddyfile
+RUN mkdir -p /etc/caddy/conf.d && touch /etc/caddy/conf.d/00-vide.caddy
 COPY docker/php.ini $PHP_INI_DIR/conf.d/zz-app.ini
 RUN mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache

@@ -5,9 +5,9 @@ namespace Tests\Feature;
 use App\Models\SignatureRequest;
 use App\Models\User;
 use App\Services\EncryptedSignatureStorage;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class SignatureTextTest extends TestCase
@@ -65,5 +65,16 @@ class SignatureTextTest extends TestCase
     public function test_signature_image_is_missing_without_upload(): void
     {
         $this->actingAs(User::factory()->create())->get(route('profile.signature.show'))->assertNotFound();
+    }
+
+    public function test_profile_shows_eid_installation_help(): void
+    {
+        config(['services.eid.help_url' => 'https://web-eid.example/', 'services.eid.middleware_url' => 'https://eid.example/']);
+
+        $this->actingAs(User::factory()->create())->get(route('profile.show'))
+            ->assertOk()
+            ->assertSee('data-eid-help="always"', false)
+            ->assertSee('https://web-eid.example/', false)
+            ->assertSee('https://eid.example/', false);
     }
 }

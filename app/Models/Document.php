@@ -19,6 +19,7 @@ class Document extends Model
         return [
             'expires_at' => 'datetime', 'completed_at' => 'datetime',
             'cancelled_at' => 'datetime', 'revoked_at' => 'datetime',
+            'page_sizes' => 'array',
         ];
     }
 
@@ -50,6 +51,21 @@ class Document extends Model
         $base = pathinfo((string) $this->original_name, PATHINFO_FILENAME) ?: Str::slug($this->title) ?: 'document';
 
         return $base.($this->status === 'signed' ? '-signé' : '').'.pdf';
+    }
+
+    public function usesEid(): bool
+    {
+        return $this->signature_method === 'eid';
+    }
+
+    /**
+     * Autres documents du même lot, dans l'ordre d'envoi.
+     *
+     * @return HasMany<Document, $this>
+     */
+    public function batchSiblings(): HasMany
+    {
+        return $this->hasMany(self::class, 'batch_id', 'batch_id')->orderBy('created_at')->orderBy('title');
     }
 
     public function isTerminal(): bool

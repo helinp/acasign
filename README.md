@@ -41,6 +41,26 @@ Pour un développement local en SQLite, remplacez `DB_CONNECTION` par `sqlite` e
 
 L’application emploie Authorization Code + PKCE, valide la signature du jeton avec le JWKS Microsoft, ainsi que `aud`, `tid`, `nonce`, expiration et domaine. Les invités `#EXT#` et les identifiants contenant `.ELEVE` sont refusés.
 
+## Signature eID (carte d’identité belge)
+
+Un type de document marqué « Signature eID requise » (Admin → Types de documents) se signe avec la carte eID :
+
+1. le poste du signataire a un lecteur, le logiciel eID belge et **Web eID** (extension + application, https://web-eid.eu/) ; l’aide de *Mon profil* vérifie l’installation ;
+2. l’application obtient le certificat de signature de la carte, DSS (`dss`, conteneur interne) calcule les données à signer, la carte les signe après saisie du code PIN ;
+3. DSS intègre la signature (PAdES, révision incrémentale) ; le PDF n’est plus réécrit ensuite, l’apparence visible (image et mentions) est dessinée par DSS.
+
+En local, Web eID refuse `http://localhost` : utilisez `https://localhost:8443` avec un certificat mkcert (une fois) :
+
+```bash
+brew install mkcert nss && mkcert -install
+mkdir -p docker/dev-certs && mkcert -cert-file docker/dev-certs/localhost.pem -key-file docker/dev-certs/localhost-key.pem localhost 127.0.0.1
+chmod 644 docker/dev-certs/*.pem
+```
+
+puis `APP_URL=https://localhost:8443` dans `.env` et `docker compose up -d --build`.
+
+Limites actuelles : pas de champs à compléter sur ces documents ; niveau `PAdES_BASELINE_LT` par défaut (`DSS_SIGNATURE_LEVEL`) : horodatage via `TSA_URL` (conteneur `dss`) et éléments de révocation intégrés. Dans Acrobat, activer la liste de confiance européenne (Préférences → Gestionnaire de confiance → EUTL) pour que l’identité soit reconnue. Web eID exige HTTPS (sauf `localhost`).
+
 ## Déploiement Portainer / Traefik
 
 Pour Portainer avec Docker Standalone, pousser le code dans un dépôt Git privé puis créer une stack depuis ce dépôt avec `docker-compose.portainer.yml`. Charger `.env.example` dans les variables de la stack : Portainer les fournit aux services via `stack.env`. Ne jamais versionner `.env`, `stack.env` ni le contenu de `secrets/`.

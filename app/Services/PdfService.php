@@ -67,6 +67,24 @@ class PdfService
         return $sourcePath;
     }
 
+    /**
+     * Taille de chaque page en points PDF (1 pt = 1/72 pouce), lue sur un PDF déjà assaini.
+     *
+     * @return list<array{0: float, 1: float}>
+     */
+    public function pageSizes(string $path): array
+    {
+        $pdf = $this->newPdf();
+        $count = $pdf->setSourceFile($path);
+        $sizes = [];
+        for ($page = 1; $page <= $count; $page++) {
+            $size = $pdf->getTemplateSize($pdf->importPage($page));
+            $sizes[] = [round($size['width'] * 72 / 25.4, 2), round($size['height'] * 72 / 25.4, 2)];
+        }
+
+        return $sizes;
+    }
+
     public function stamp(Document $document, SignatureRequest $request, string $signatureBytes): string
     {
         $source = Storage::disk('local')->path($document->file_path);
@@ -102,6 +120,24 @@ class PdfService
         rename($target, $source);
 
         return hash_file('sha256', $source);
+    }
+
+    /**
+     * Copie du PDF courant avec les champs complétés du signataire (avant une signature eID, qui fige ensuite le fichier).
+     */
+    public function fillFields(Document $document, SignatureRequest $request): string
+    {
+        $pdf = $this->newPdf();
+        $pages = $pdf->setSourceFile(Storage::disk('local')->path($document->file_path));
+        for ($page = 1; $page <= $pages; $page++) {
+            $template = $pdf->importPage($page);
+            $size = $pdf->getTemplateSize($template);
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $pdf->useTemplate($template);
+            $this->drawFields($pdf, $size, $request->fields->where('page', $page));
+        }
+
+        return $pdf->Output('', 'S');
     }
 
     public function seal(Document $document): string

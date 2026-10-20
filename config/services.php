@@ -25,6 +25,19 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    'dss' => [
+        'url' => env('DSS_URL', 'http://dss:8080'),
+        // PAdES_BASELINE_LT : horodatage (TSA_URL du conteneur dss) + éléments de révocation intégrés,
+        // pour une validation à long terme. PAdES_BASELINE_B si aucun horodatage n'est joignable.
+        'signature_level' => env('DSS_SIGNATURE_LEVEL', 'PAdES_BASELINE_LT'),
+        'timeout' => (int) env('DSS_TIMEOUT', 60),
+    ],
+
+    'eid' => [
+        'help_url' => env('EID_HELP_URL', 'https://web-eid.eu/'),
+        'middleware_url' => env('EID_MIDDLEWARE_URL', 'https://eid.belgium.be/fr'),
+    ],
+
     'signature' => [
         'certificate' => env('PDF_SIGNING_CERTIFICATE', '/run/secrets/pdf_signing_certificate'),
         'private_key' => env('PDF_SIGNING_PRIVATE_KEY', '/run/secrets/pdf_signing_private_key'),

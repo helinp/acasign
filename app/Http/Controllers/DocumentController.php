@@ -14,6 +14,8 @@ use App\Services\PdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -88,25 +90,70 @@ class DocumentController extends Controller
     public function store(StoreDocumentRequest $request, PdfService $pdf, InternalIdentityService $identities, AuditService $audit): RedirectResponse
     {
         $data = $request->validated();
-        $signers = collect($data['signers'])->map(fn ($email) => $identities->normalizeAndValidate($email))->unique()->values();
+        $signers = collect($request->signerEmails())
+            ->when($request->boolean('self_sign'), fn ($emails) => $emails->prepend($request->user()->email))
+            ->map(fn ($email) => $identities->normalizeAndValidate($email))
+            ->unique()->values();
+        $files = $request->pdfFiles();
+        $batchId = count($files) > 1 ? (string) Str::uuid() : null;
+        $method = DocumentType::where('name', $data['document_type'])->value('requires_eid') ? 'eid' : 'internal';
+        $created = [];
+
+        try {
+            foreach ($files as $file) {
+                $title = $batchId ? $data['title'].' — '.pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) : $data['title'];
+                $created[] = $this->createDocument($request, $pdf, $file, $signers, [...$data, 'title' => $title], $batchId, $method);
+            }
+        } catch (\Throwable $e) {
+            foreach ($created as $document) {
+                Storage::disk('local')->deleteDirectory(dirname($document->file_path));
+                $document->delete();
+            }
+            throw $e;
+        }
+
+        foreach ($created as $document) {
+            $audit->record('document.created', $document, $request->user(), ['signers' => $signers->all(), 'sha256' => $document->sha256, 'batch_id' => $batchId], $request);
+            DispatchDocumentNotification::dispatch($document->id, 'document.requested');
+        }
+
+        $message = count($created) > 1
+            ? count($created).' documents créés. Positionnez les signatures de chacun.'
+            : 'Document créé. Positionnez maintenant les zones de signature.';
+
+        return redirect()->route('documents.edit', $created[0])->with('success', $message);
+    }
+
+    /**
+     * Assainit un PDF et crée le document et ses demandes de signature.
+     *
+     * @param  Collection<int, string>  $signers
+     * @param  array<string, mixed>  $data
+     */
+    private function createDocument(Request $request, PdfService $pdf, UploadedFile $file, Collection $signers, array $data, ?string $batchId, string $method): Document
+    {
         $id = (string) Str::uuid();
         $relativePath = "documents/$id/current.pdf";
         $absolutePath = Storage::disk('local')->path($relativePath);
 
         try {
-            $pages = $pdf->sanitize($request->file('document')->getRealPath(), $absolutePath);
-            $document = DB::transaction(function () use ($data, $request, $signers, $id, $relativePath, $absolutePath, $pages) {
+            $pages = $pdf->sanitize($file->getRealPath(), $absolutePath);
+
+            return DB::transaction(function () use ($data, $request, $file, $signers, $id, $relativePath, $absolutePath, $pages, $pdf, $batchId, $method) {
                 $document = Document::create([
                     'id' => $id,
+                    'batch_id' => $batchId,
                     'verification_code' => Str::random(48),
                     'requester_id' => $request->user()->id,
-                    'title' => $data['title'],
+                    'title' => Str::limit($data['title'], 180, ''),
                     'document_type' => $data['document_type'] ?? null,
+                    'signature_method' => $method,
                     'status' => 'pending',
-                    'original_name' => $request->file('document')->getClientOriginalName(),
+                    'original_name' => $file->getClientOriginalName(),
                     'file_path' => $relativePath,
                     'file_size' => filesize($absolutePath),
                     'page_count' => $pages,
+                    'page_sizes' => $pdf->pageSizes($absolutePath),
                     'sha256' => hash_file('sha256', $absolutePath),
                     'expires_at' => $data['expires_at'] ?? now()->addDays(15),
                 ]);
@@ -116,7 +163,7 @@ class DocumentController extends Controller
                         'document_id' => $document->id,
                         'signer_id' => $known?->id,
                         'signer_email' => $email,
-                        'signer_name' => $known?->name ?? $email,
+                        'signer_name' => $known?->signatureName() ?? $email,
                         'page' => $pages,
                         'position_x' => 0.62,
                         'position_y' => max(0.05, 0.80 - ($index * 0.14)),
@@ -130,11 +177,6 @@ class DocumentController extends Controller
             Storage::disk('local')->delete($relativePath);
             throw $e;
         }
-
-        $audit->record('document.created', $document, $request->user(), ['signers' => $signers->all(), 'sha256' => $document->sha256], $request);
-        DispatchDocumentNotification::dispatch($document->id, 'document.requested');
-
-        return redirect()->route('documents.edit', $document)->with('success', 'Document créé. Positionnez maintenant les zones de signature.');
     }
 
     /**
@@ -156,8 +198,24 @@ class DocumentController extends Controller
     {
         abort_unless($document->requester_id === $request->user()->id && $document->status === 'pending', 403);
         $document->load(['signatureRequests', 'fields.signatureRequest']);
+        $batch = $document->batch_id ? $document->batchSiblings()->get(['id', 'title', 'batch_id', 'created_at']) : collect([$document]);
+        $position = $batch->search(fn (Document $sibling) => $sibling->id === $document->id);
+        $next = $batch->get($position + 1);
+        $mySignature = SignatureRequest::query()
+            ->whereIn('document_id', $batch->pluck('id'))
+            ->where('signer_email', mb_strtolower($request->user()->email))
+            ->where('status', 'pending')
+            ->orderByRaw('(select created_at from documents where documents.id = signature_requests.document_id)')
+            ->first();
 
-        return view('documents.editor', compact('document'));
+        return view('documents.editor', [
+            'document' => $document,
+            'batch' => $batch,
+            'position' => $position,
+            'nextUrl' => $next ? route('documents.edit', $next) : null,
+            'finishUrl' => $mySignature ? route('signatures.show', $mySignature) : route('documents.show', $document),
+            'finishLabel' => $mySignature ? 'Terminer et signer →' : 'Terminer ✓',
+        ]);
     }
 
     /**

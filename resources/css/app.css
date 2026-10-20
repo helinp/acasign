@@ -162,3 +162,13 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
 @media print { .util, .head, .foot { display: none; } }
+
+/* Aide Web eID */
+.eid-status { font-weight: 600; padding-left: 1.1rem; position: relative; }
+.eid-status::before { content: ""; position: absolute; left: 0; top: .45em; width: .6rem; height: .6rem; background: var(--ac-gris); }
+.eid-status.is-ok::before { background: var(--ac-green); }
+.eid-status.is-ko::before { background: var(--ac-rouge); }
+.eid-status.is-checking { color: var(--ac-gris); }
+.eid-steps { padding-left: 1.2rem; font-size: 14px; }
+.eid-steps li { padding: .35rem .5rem; margin-bottom: .25rem; }
+.eid-steps li.is-todo { background: #FFF6CC; border-left: 4px solid var(--ac-jaune); }

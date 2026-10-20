@@ -16,6 +16,25 @@ services:
     networks: [backend]
     security_opt: [no-new-privileges:true]
 
+  dss:
+    # DSS (Digital Signature Service, Commission européenne) : construit la signature PAdES
+    # à partir de la signature eID réalisée sur le poste. Premier build long (Maven, ~10-20 min).
+    build: ./docker/dss
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx1g"
+      # Service d'horodatage (RFC 3161) utilisé pour les signatures PAdES_BASELINE_T / LT.
+      TSA_URL: ${TSA_URL:-http://tsa.belgium.be/connect}
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+    # backend : joignable par l'application uniquement ; egress : accès sortant (OCSP, CRL, AIA, horodatage).
+    networks: [backend, egress]
+    security_opt: [no-new-privileges:true]
+
   migrate:
     build: .
     command: ["php", "artisan", "migrate", "--force"]
@@ -87,6 +106,7 @@ secrets:
 
 networks:
   backend: { internal: true }
+  egress: {}
   proxy:
     external: true
     name: ${TRAEFIK_NETWORK:-proxy}

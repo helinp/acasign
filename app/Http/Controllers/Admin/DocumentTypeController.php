@@ -25,8 +25,11 @@ class DocumentTypeController extends Controller
 
     public function store(Request $request, AuditService $audit): RedirectResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:80', Rule::unique('document_types', 'name')]]);
-        $type = DocumentType::create(['name' => trim($data['name']), 'is_active' => true]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:80', Rule::unique('document_types', 'name')],
+            'requires_eid' => ['nullable', 'boolean'],
+        ]);
+        $type = DocumentType::create(['name' => trim($data['name']), 'is_active' => true, 'requires_eid' => (bool) ($data['requires_eid'] ?? false)]);
         $audit->record('admin.document_type.created', null, $request->user(), ['document_type_id' => $type->id, 'name' => $type->name], $request);
 
         return back()->with('success', 'Type de document ajouté.');
@@ -37,15 +40,16 @@ class DocumentTypeController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80', Rule::unique('document_types', 'name')->ignore($documentType)],
             'is_active' => ['nullable', 'boolean'],
+            'requires_eid' => ['nullable', 'boolean'],
         ]);
         $previousName = $documentType->name;
         DB::transaction(function () use ($documentType, $data, $previousName) {
-            $documentType->update(['name' => trim($data['name']), 'is_active' => (bool) ($data['is_active'] ?? false)]);
+            $documentType->update(['name' => trim($data['name']), 'is_active' => (bool) ($data['is_active'] ?? false), 'requires_eid' => (bool) ($data['requires_eid'] ?? false)]);
             if ($documentType->name !== $previousName) {
                 Document::where('document_type', $previousName)->update(['document_type' => $documentType->name]);
             }
         });
-        $audit->record('admin.document_type.updated', null, $request->user(), ['document_type_id' => $documentType->id, 'name' => $documentType->name, 'is_active' => $documentType->is_active], $request);
+        $audit->record('admin.document_type.updated', null, $request->user(), ['document_type_id' => $documentType->id, 'name' => $documentType->name, 'is_active' => $documentType->is_active, 'requires_eid' => $documentType->requires_eid], $request);
 
         return back()->with('success', 'Type de document mis à jour.');
     }
