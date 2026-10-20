@@ -17,7 +17,7 @@ class EntraAuthenticationTest extends TestCase
             'services.entra.redirect' => 'https://signature.example/auth/entra/callback',
         ]);
         $response = $this->get('/auth/entra');
-        $response->assertRedirectContains('login.microsoftonline.com/11111111-1111-1111-1111-111111111111');
+        $response->assertRedirectContains('https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/oauth2/v2.0/authorize?');
         $response->assertRedirectContains('response_type=code');
         $response->assertRedirectContains('code_challenge_method=S256');
         $this->assertNotEmpty(session('oidc_nonce'));

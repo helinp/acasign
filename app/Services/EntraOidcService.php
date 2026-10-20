@@ -11,7 +11,7 @@ class EntraOidcService
 {
     private function authority(): string
     {
-        return 'https://login.microsoftonline.com/'.config('services.entra.tenant_id').'/v2.0';
+        return 'https://login.microsoftonline.com/'.config('services.entra.tenant_id');
     }
 
     public function authorizationUrl(): string
@@ -50,7 +50,7 @@ class EntraOidcService
             'scope' => 'openid profile email',
         ])->throw()->json();
 
-        $discovery = Http::connectTimeout(3)->timeout(10)->get($this->authority().'/.well-known/openid-configuration')->throw()->json();
+        $discovery = Http::connectTimeout(3)->timeout(10)->get($this->authority().'/v2.0/.well-known/openid-configuration')->throw()->json();
         $jwks = cache()->remember('entra-jwks', 3600, fn () => Http::connectTimeout(3)->timeout(10)->get($discovery['jwks_uri'])->throw()->json());
         $claims = (array) JWT::decode($response['id_token'], JWK::parseKeySet($jwks));
 
