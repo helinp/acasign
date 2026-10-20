@@ -65,6 +65,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/mail-test', [SettingController::class, 'testMail'])->middleware('throttle:5,1')->name('settings.mail-test');
         Route::get('/document-types', [DocumentTypeController::class, 'index'])->name('document-types.index');
         Route::post('/document-types', [DocumentTypeController::class, 'store'])->name('document-types.store');
         Route::put('/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('document-types.update');

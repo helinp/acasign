@@ -104,11 +104,34 @@ class SettingTest extends TestCase
         $this->assertSame('', Setting::themeCss());
     }
 
+    public function test_admin_sends_a_test_email(): void
+    {
+        config(['mail.default' => 'array']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['test_recipient' => 'secretariat@ecole.test'])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $messages = app('mailer')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $messages);
+        $this->assertSame('secretariat@ecole.test', $messages->first()->getEnvelope()->getRecipients()[0]->getAddress());
+    }
+
+    public function test_failed_test_email_shows_the_error(): void
+    {
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.url' => null]);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['test_recipient' => 'secretariat@ecole.test'])
+            ->assertRedirect()->assertSessionHas('mail_test_error');
+    }
+
     public function test_non_admin_cannot_change_settings(): void
     {
         $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)->put(route('admin.settings.update'), ['entity_name' => 'Pirate'])->assertForbidden();
+        $this->actingAs($user)->post(route('admin.settings.mail-test'), ['test_recipient' => 'x@ecole.test'])->assertForbidden();
         $this->assertNotSame('Pirate', Setting::entityName());
     }
 }

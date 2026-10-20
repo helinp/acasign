@@ -9,6 +9,8 @@ use App\Support\Color;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -25,6 +27,12 @@ class SettingController extends Controller
             'actionColor' => Setting::actionColor(),
             'brandColor' => Setting::brandColor(),
             'defaultEmailDomain' => config('services.entra.allowed_domains')[0] ?? 'exemple.be',
+            'mailConfig' => [
+                'mailer' => (string) config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'from' => config('mail.from.address'),
+            ],
         ]);
     }
 
@@ -70,6 +78,27 @@ class SettingController extends Controller
         ], $request);
 
         return back()->with('success', 'Réglages enregistrés.');
+    }
+
+    /**
+     * Envoi immédiat (hors file d'attente) d'un e-mail de test, pour valider la configuration MAIL_*.
+     */
+    public function testMail(Request $request, AuditService $audit): RedirectResponse
+    {
+        $data = $request->validate(['test_recipient' => ['required', 'email:rfc', 'max:120']], [], ['test_recipient' => 'destinataire']);
+        try {
+            Mail::raw(
+                'Ceci est un e-mail de test envoyé par '.config('app.name').' pour '.Setting::entityName().".\n\nSi vous le recevez, l’envoi des notifications fonctionne.",
+                fn ($mail) => $mail->to($data['test_recipient'])->subject('Test d’envoi – '.config('app.name')),
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Échec de l’e-mail de test.', ['to' => $data['test_recipient'], 'exception' => $exception->getMessage()]);
+
+            return back()->withInput()->with('mail_test_error', mb_substr($exception->getMessage(), 0, 500));
+        }
+        $audit->record('admin.mail.tested', null, $request->user(), ['to' => $data['test_recipient'], 'mailer' => config('mail.default')], $request);
+
+        return back()->with('success', 'E-mail de test envoyé à '.$data['test_recipient'].' : vérifiez la boîte de réception et les courriers indésirables.');
     }
 
     /** Refuse une couleur trop peu contrastée sur son fond (lisibilité, WCAG 1.4.3). */

@@ -77,4 +77,29 @@
     </div>
     <button class="btn btn-primary"><x-icon name="device-floppy" />Enregistrer</button>
 </form>
+
+<section class="mt-5" style="max-width:760px" aria-labelledby="mail-test-title">
+    <h2 class="band" id="mail-test-title"><span class="band__title"><x-icon name="send" />Envoi des e-mails</span></h2>
+    <div class="panel">
+        <dl class="row small mb-3">
+            <dt class="col-sm-4 text-muted">Mode</dt><dd class="col-sm-8"><code>{{ $mailConfig['mailer'] }}</code></dd>
+            @if($mailConfig['mailer'] === 'smtp')<dt class="col-sm-4 text-muted">Serveur</dt><dd class="col-sm-8"><code>{{ $mailConfig['host'] }}:{{ $mailConfig['port'] }}</code></dd>@endif
+            <dt class="col-sm-4 text-muted">Expéditeur</dt><dd class="col-sm-8"><code>{{ $mailConfig['from'] }}</code></dd>
+        </dl>
+        @if(in_array($mailConfig['mailer'], ['log', 'array'], true))
+            <x-alert type="warning">Mode « {{ $mailConfig['mailer'] }} » : aucun e-mail ne part réellement, les messages sont seulement écrits dans le journal. Réglez <code>MAIL_MAILER=smtp</code> et les variables <code>MAIL_*</code> de la stack.</x-alert>
+        @endif
+        @if(session('mail_test_error'))
+            <x-alert type="danger" role="alert"><strong class="d-block mb-1">L’envoi a échoué.</strong><code class="hash">{{ session('mail_test_error') }}</code></x-alert>
+        @endif
+        <form method="post" action="{{ route('admin.settings.mail-test') }}" class="d-flex flex-wrap align-items-end gap-2" novalidate>@csrf
+            <div class="flex-grow-1">
+                <label class="form-label" for="test_recipient">Destinataire du test</label>
+                <input class="form-control @error('test_recipient') is-invalid @enderror" type="email" id="test_recipient" name="test_recipient" maxlength="120" value="{{ old('test_recipient', auth()->user()->email) }}" required>
+                <x-field-error name="test_recipient" />
+            </div>
+            <button class="btn btn-outline-primary"><x-icon name="send" />Envoyer un e-mail de test</button>
+        </form>
+    </div>
+</section>
 @endsection
