@@ -74,7 +74,7 @@ class SignatureController extends Controller
                 $sha = $pdf->stamp($document, $signatureRequest, $images->bytes($request->user()));
                 $signatureRequest->update(['status' => 'signed', 'signed_at' => now(), 'signer_id' => $request->user()->id, 'document_sha256' => $sha]);
                 $document->update(['sha256' => $sha, 'file_size' => filesize(Storage::disk('local')->path($document->file_path)), 'lock_version' => $document->lock_version + 1]);
-                $audit->record('signature.signed', $document, $request->user(), ['signature_request_id' => $signatureRequest->id, 'sha256' => $sha], $request);
+                $audit->record('signature.signed', $document, $request->user(), ['signature_request_id' => $signatureRequest->id, 'sha256' => $sha, 'consent' => true], $request);
 
                 if ($isLast) {
                     $sealed = $pdf->seal($document);
@@ -292,11 +292,12 @@ class SignatureController extends Controller
     private function validateSignatureOptions(Request $request): void
     {
         $options = $request->validate([
+            'consent' => ['accepted'],
             'show_name' => ['nullable', 'boolean'],
             'show_job_title' => ['nullable', 'boolean'],
             'show_date' => ['nullable', 'boolean'],
             'job_title' => ['nullable', 'string', 'max:120', 'required_if_accepted:show_job_title'],
-        ]);
+        ], ['consent.accepted' => 'Cochez la confirmation de lecture pour signer.']);
         if (filled($options['job_title'] ?? null) && $options['job_title'] !== $request->user()->job_title) {
             $request->user()->update(['job_title' => $options['job_title']]);
         }

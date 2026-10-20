@@ -1,3 +1,5 @@
+import { makeMovable, markDragged } from './placement.js';
+
 /**
  * Champs à compléter (date, coche, texte) superposés au PDF.
  * - mode « design » (demandeur) : ajout, déplacement et suppression des champs attribués aux signataires ;
@@ -83,15 +85,20 @@ export function setupFields({ stage, pages, csrf }) {
                 window.removeEventListener('pointercancel', up);
                 if (!dragging) return;
                 zone.classList.remove('dragging');
+                markDragged(zone);
                 // Empêche le clic de fin de glissement de cocher/décocher la case.
                 zone.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
-                const response = await request(fieldUrl(field.id), 'PUT', geometry(zone));
-                setStatus(response.ok ? 'Champ enregistré' : 'Échec de l’enregistrement');
+                await saveGeometry(zone, field);
             };
             window.addEventListener('pointermove', move);
             window.addEventListener('pointerup', up);
             window.addEventListener('pointercancel', up);
         });
+    };
+
+    const saveGeometry = async (zone, field) => {
+        const response = await request(fieldUrl(field.id), 'PUT', geometry(zone));
+        setStatus(response.ok ? 'Champ enregistré' : 'Échec de l’enregistrement');
     };
 
     const removeButton = (zone, field) => {
@@ -135,6 +142,7 @@ export function setupFields({ stage, pages, csrf }) {
             zone.title = `${field.signer ?? ''}${field.required ? ' (obligatoire)' : ''}`;
             zone.appendChild(removeButton(zone, field));
             makeDraggable(zone, field);
+            makeMovable(zone, () => saveGeometry(zone, field), `Champ ${TYPE_LABELS[field.type]}${field.label ? ` « ${field.label} »` : ''}`);
         } else {
             zone.appendChild(input(field));
             if (field.addedBySigner) {
@@ -142,6 +150,7 @@ export function setupFields({ stage, pages, csrf }) {
                 zone.title = 'Glisser pour déplacer';
                 zone.appendChild(removeButton(zone, field));
                 makeDraggable(zone, field);
+                makeMovable(zone, () => saveGeometry(zone, field), `Mon champ ${TYPE_LABELS[field.type]}`);
             }
         }
         page.appendChild(zone);

@@ -44,7 +44,7 @@ a:not(.btn, .brand, .tabs a, .head-nav a, .row-link):hover { background: var(--a
 .brand img { height: 42px; width: auto; max-width: 80px; object-fit: contain; }
 .brand__name { display: block; color: var(--ac-pink); font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
 .brand__sub { display: block; color: var(--ac-violet); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-top: 3px; }
-.util a, .util__btn { color: #fff; background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; text-transform: uppercase; }
+.util a, .util__btn { display: inline-block; color: #fff; background: none; border: 0; padding: 4px 2px; min-height: 24px; font: inherit; letter-spacing: inherit; text-transform: uppercase; }
 .util a:hover, .util__btn:hover { background: none; box-shadow: none; text-decoration: underline; }
 .head-nav { align-items: center; gap: 1.25rem; font-weight: 600; font-size: 16px; }
 .head-nav.show, .head-nav.collapsing { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: .75rem; padding-top: .5rem; }
@@ -115,7 +115,8 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 .form-label { font-weight: 600; font-size: 14px; }
 .form-control, .form-select { border: 1.5px solid var(--ac-placeholder); border-radius: 0; padding: .6rem .75rem; }
 .form-control:focus, .form-select:focus { border-color: var(--ac-noir); box-shadow: none; }
-.form-check-input { border-radius: 0 !important; border: 1.5px solid var(--ac-noir); }
+.form-check-input { border-radius: 0 !important; border: 1.5px solid var(--ac-noir); width: 1.25rem; height: 1.25rem; margin-top: .1rem; }
+.form-check { min-height: 24px; }
 .form-check-input:checked { background-color: var(--ac-noir); border-color: var(--ac-noir); }
 .drop-zone { border: 2px dashed var(--ac-placeholder); background: #fff; padding: 1.25rem; }
 .alert { border-radius: 0; border: 0; border-left: 4px solid currentColor; }
@@ -172,3 +173,21 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 .eid-steps { padding-left: 1.2rem; font-size: 14px; }
 .eid-steps li { padding: .35rem .5rem; margin-bottom: .25rem; }
 .eid-steps li.is-todo { background: #FFF6CC; border-left: 4px solid var(--ac-jaune); }
+
+/* Aperçu de signature, sélection clavier des cadres, lien d'évitement */
+.sign-preview { border: 1.5px dashed var(--ac-placeholder); background: #fff; padding: .6rem .8rem; font-size: 12px; line-height: 1.35; min-height: 3rem; }
+.sign-preview img { max-height: 48px; width: auto; margin-bottom: .25rem; }
+.signature-zone:focus-visible, .field-zone:focus-visible { outline: 3px solid var(--ac-noir) !important; outline-offset: 2px; }
+.signature-zone.is-selected, .field-zone.is-selected { outline: 3px dashed var(--ac-noir); outline-offset: 2px; }
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 1000; background: var(--ac-noir); color: #fff; padding: 10px 16px; font-weight: 700; }
+.skip-link:focus { left: 8px; top: 8px; }
+
+/* Tableaux empilés sur écran étroit : chaque ligne devient une carte, chaque cellule reprend son libellé. */
+@media (max-width: 767.98px) {
+    .table-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .table-stack, .table-stack tbody, .table-stack tr, .table-stack td { display: block; width: 100%; }
+    .table-stack tr { border-bottom: 1px solid var(--ac-ligne); padding: .5rem 0; }
+    .table-stack > :not(caption) > * > * { border-bottom: 0; padding: .35rem .75rem; }
+    .table-stack td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ac-gris-2); }
+    .table-stack td.text-end { text-align: left !important; }
+}

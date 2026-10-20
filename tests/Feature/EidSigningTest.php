@@ -40,7 +40,7 @@ class EidSigningTest extends TestCase
         [$signer, $document, $signatureRequest] = $this->eidDocument();
 
         $prepared = $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
-            'certificate' => $this->certificate,
+            'certificate' => $this->certificate, 'consent' => '1',
             'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
             'show_name' => '1', 'show_date' => '1', 'show_job_title' => '0',
         ])->assertOk()->assertJsonPath('hashFunction', 'SHA-384');
@@ -93,7 +93,7 @@ class EidSigningTest extends TestCase
         [, $authentication] = $this->signingCertificate('digitalSignature');
 
         $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
-            'certificate' => $authentication,
+            'certificate' => $authentication, 'consent' => '1',
             'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
         ])->assertJsonValidationErrors('eid');
     }
@@ -103,9 +103,20 @@ class EidSigningTest extends TestCase
         [, , $signatureRequest] = $this->eidDocument();
 
         $this->actingAs(User::factory()->create())->postJson(route('signatures.eid.prepare', $signatureRequest), [
-            'certificate' => $this->certificate,
+            'certificate' => $this->certificate, 'consent' => '1',
             'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
         ])->assertForbidden();
+    }
+
+    public function test_eid_signature_requires_reading_confirmation(): void
+    {
+        [$signer, , $signatureRequest] = $this->eidDocument();
+
+        $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
+            'certificate' => $this->certificate,
+            'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
+        ])->assertJsonValidationErrors('consent');
+        Http::assertNothingSent();
     }
 
     public function test_card_test_reads_the_signing_certificate(): void
@@ -160,7 +171,7 @@ class EidSigningTest extends TestCase
         DocumentField::create(['document_id' => $document->id, 'signature_request_id' => $other->id, 'type' => 'text', 'page' => 1, 'position_x' => 0.1, 'position_y' => 0.1, 'width' => 0.2, 'height' => 0.03]);
 
         $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
-            'certificate' => $this->certificate,
+            'certificate' => $this->certificate, 'consent' => '1',
             'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
         ])->assertStatus(409);
         $this->actingAs($signer)->get(route('signatures.show', $signatureRequest))->assertDontSee('data-open-sign="eid"', false);
@@ -169,7 +180,7 @@ class EidSigningTest extends TestCase
     private function prepare(User $signer, SignatureRequest $signatureRequest): void
     {
         $this->actingAs($signer)->postJson(route('signatures.eid.prepare', $signatureRequest), [
-            'certificate' => $this->certificate,
+            'certificate' => $this->certificate, 'consent' => '1',
             'supportedSignatureAlgorithms' => [['cryptoAlgorithm' => 'ECC', 'hashFunction' => 'SHA-384', 'paddingScheme' => 'NONE']],
         ])->assertOk();
     }

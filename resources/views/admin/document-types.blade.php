@@ -22,7 +22,7 @@
         <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-primary" form="{{ $formId }}">Enregistrer</button>
             @if((int) ($usage[$type->name] ?? 0) === 0)
-                <form method="post" action="{{ route('admin.document-types.destroy', $type) }}" class="d-inline" data-confirm="Supprimer « {{ $type->name }} » ?" onsubmit="return confirm(this.dataset.confirm)">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" aria-label="Supprimer {{ $type->name }}">Supprimer</button></form>
+                <form method="post" action="{{ route('admin.document-types.destroy', $type) }}" class="d-inline" data-confirm="Supprimer « {{ $type->name }} » ?">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" aria-label="Supprimer {{ $type->name }}">Supprimer</button></form>
             @endif
         </td>
     </tr>

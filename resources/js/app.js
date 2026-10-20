@@ -5,6 +5,30 @@ document.querySelectorAll('tr[data-href]').forEach(row => row.addEventListener('
     window.location.href = row.dataset.href;
 }));
 
+// Aperçu des mentions imprimées sous la signature, mis à jour à chaque choix.
+const preview = document.querySelector('[data-sign-preview]');
+if (preview) {
+    const form = preview.closest('form');
+    const lines = preview.querySelector('[data-preview-lines]');
+    const render = () => {
+        const checked = name => form.querySelector(`input[type=checkbox][name="${name}"]`)?.checked;
+        const now = new Date().toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+        const items = [
+            checked('show_name') && preview.dataset.name,
+            checked('show_job_title') && form.querySelector('[name="job_title"]')?.value.trim(),
+            checked('show_date') && `Signé le ${now}`,
+        ].filter(Boolean);
+        lines.replaceChildren(...(items.length ? items : ['(aucune mention)']).map(text => Object.assign(document.createElement('div'), { textContent: text })));
+    };
+    form.addEventListener('input', render);
+    render();
+}
+
+// Confirmation des actions destructives : <form data-confirm="Message">.
+document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {
+    if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+}));
+
 // Choix explicite du mode de signature : la fenêtre n'affiche que le bouton correspondant.
 document.querySelectorAll('[data-open-sign]').forEach(button => button.addEventListener('click', () => {
     document.querySelectorAll('[data-sign-only]').forEach(element => { element.hidden = element.dataset.signOnly !== button.dataset.openSign; });
@@ -43,6 +67,8 @@ if (stage) {
         placements.filter(p => Number(p.page) === pageNumber).forEach(p => addZone(wrapper, p));
     }
 
+    const { makeMovable } = await import('./placement.js');
+    stage.querySelectorAll('.signature-zone').forEach(zone => makeMovable(zone, savePlacements, `Cadre de signature : ${zone.textContent}`));
     const { setupFields } = await import('./fields.js');
     setupFields({ stage, pages: pageWrappers, csrf });
 
@@ -55,11 +81,13 @@ if (stage) {
             const bounds = wrapper.getBoundingClientRect(); const initial = zone.getBoundingClientRect();
             const offsetX = event.clientX - initial.left; const offsetY = event.clientY - initial.top;
             const move = e => {
+                moved = true;
                 const x = Math.max(0, Math.min(bounds.width - initial.width, e.clientX - bounds.left - offsetX));
                 const y = Math.max(0, Math.min(bounds.height - initial.height, e.clientY - bounds.top - offsetY));
                 zone.style.left = `${x / bounds.width * 100}%`; zone.style.top = `${y / bounds.height * 100}%`;
             };
-            const up = async () => { zone.classList.remove('dragging'); zone.removeEventListener('pointermove', move); zone.removeEventListener('pointerup', up); await savePlacements(); };
+            let moved = false;
+            const up = async () => { zone.classList.remove('dragging'); zone.removeEventListener('pointermove', move); zone.removeEventListener('pointerup', up); if (moved) { (await import('./placement.js')).markDragged(zone); await savePlacements(); } };
             zone.addEventListener('pointermove', move); zone.addEventListener('pointerup', up);
         });
     }
@@ -67,7 +95,8 @@ if (stage) {
     async function savePlacements() {
         const current = [...stage.querySelectorAll('.signature-zone')].map(zone => {
             const page = zone.closest('.pdf-page');
-            return { id: zone.dataset.id, page: Number(page.dataset.page), x: zone.offsetLeft / page.clientWidth, y: zone.offsetTop / page.clientHeight, width: zone.offsetWidth / page.clientWidth, height: zone.offsetHeight / page.clientHeight };
+            // Lecture des % posés en style : offsetWidth inclurait la bordure et ferait grossir le cadre à chaque enregistrement.
+            return { id: zone.dataset.id, page: Number(page.dataset.page), x: parseFloat(zone.style.left) / 100, y: parseFloat(zone.style.top) / 100, width: parseFloat(zone.style.width) / 100, height: parseFloat(zone.style.height) / 100 };
         });
         const single = stage.dataset.single === 'true'; const body = single ? current[0] : { placements: current };
         const response = await fetch(saveUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(body) });

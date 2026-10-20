@@ -11,6 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
 @auth
 @php($me = auth()->user())
 <div class="util"><div class="container d-flex justify-content-end align-items-center gap-3">
@@ -32,7 +33,7 @@
     </nav>
 </div></header>
 @endauth
-<main class="@yield('main-class', 'container py-4 py-lg-5')">
+<main id="contenu" tabindex="-1" class="@yield('main-class', 'container py-4 py-lg-5')">
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @yield('content')

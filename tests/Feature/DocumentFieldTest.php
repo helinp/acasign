@@ -74,6 +74,16 @@ class DocumentFieldTest extends TestCase
             ->assertSessionHasErrors("fields.{$field->id}");
     }
 
+    public function test_signing_requires_reading_confirmation(): void
+    {
+        [, $signer, , $signatureRequest] = $this->pendingDocument();
+        $signer->update(['signature_path' => 'signatures/test.enc']);
+
+        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1])
+            ->assertSessionHasErrors('consent');
+        $this->assertSame('pending', $signatureRequest->fresh()->status);
+    }
+
     public function test_printable_values_are_formatted(): void
     {
         $this->assertSame('19/10/2026', (new DocumentField(['type' => 'date', 'value' => '2026-10-19']))->printableValue());

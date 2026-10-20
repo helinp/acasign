@@ -34,12 +34,14 @@ class DispatchDocumentNotification implements ShouldQueue
         [$recipients, $subject, $body] = $this->message($document);
         foreach ($this->acceptingRecipients($recipients) as $email) {
             try {
-                Mail::raw($body, fn ($mail) => $mail->to($email)->subject($subject));
+                $personal = str_replace(':lien', $this->linkFor($document, $email), $body);
+                Mail::raw($personal, fn ($mail) => $mail->to($email)->subject($subject));
             } catch (\Throwable $e) {
                 Log::warning('Email de signature non envoyé', ['document_id' => $document->id, 'error' => $e->getMessage()]);
             }
         }
 
+        $body = str_replace(':lien', route('documents.show', $document), $body);
         $teams = config('services.teams.webhook_url');
         if ($teams) {
             Http::connectTimeout(3)->timeout(10)->post($teams, ['text' => "**$subject**\n\n$body"])->throw();
@@ -71,6 +73,18 @@ class DispatchDocumentNotification implements ShouldQueue
                 throw $e;
             }
         }
+    }
+
+    /**
+     * Lien personnel : la page de signature du destinataire s'il doit signer, sinon la fiche du document.
+     */
+    private function linkFor(Document $document, string $email): string
+    {
+        $request = $document->signatureRequests
+            ->where('status', 'pending')
+            ->first(fn ($signatureRequest) => mb_strtolower($signatureRequest->signer_email) === mb_strtolower($email));
+
+        return $request ? route('signatures.show', $request) : route('documents.show', $document);
     }
 
     /**
@@ -107,9 +121,9 @@ class DispatchDocumentNotification implements ShouldQueue
 
         return match ($this->event) {
             'document.requested', 'signature.delegated' => [
-                $document->signatureRequests->where('status', 'pending')->pluck('signer_email')->unique()->all(),
+                $document->signatureRequests->where('status', 'pending')->pluck('signer_email')->unique()->values()->all(),
                 'Document à signer : '.$document->title,
-                "Une signature vous est demandée avant le {$document->expires_at?->format('d/m/Y')}.\n$link",
+                "Une signature vous est demandée avant le {$document->expires_at?->format('d/m/Y')}.\n:lien",
             ],
             'signature.rejected' => [[$document->requester->email], 'Signature refusée : '.$document->title, "Un signataire a refusé le document.\n$link"],
             'document.cancelled' => [$document->signatureRequests->pluck('signer_email')->unique()->all(), 'Demande annulée : '.$document->title, "Le demandeur a annulé cette demande.\n$link"],

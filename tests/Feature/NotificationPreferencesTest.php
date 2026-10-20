@@ -50,6 +50,17 @@ class NotificationPreferencesTest extends TestCase
         $this->assertEqualsCanonicalizing(['accord@acarts.be', 'sans-compte@acarts.be'], $this->recipients());
     }
 
+    public function test_signing_request_email_links_directly_to_the_recipient_signature_page(): void
+    {
+        $requester = User::factory()->create(['email' => 'rh@acarts.be']);
+        $document = $this->document($requester, ['prof@acarts.be']);
+
+        (new DispatchDocumentNotification($document->id, 'document.requested'))->handle();
+
+        $message = app('mailer')->getSymfonyTransport()->messages()->first()->getOriginalMessage();
+        $this->assertStringContainsString(route('signatures.show', $document->signatureRequests()->first()), $message->getTextBody());
+    }
+
     public function test_requester_who_opted_out_is_not_told_about_signatures(): void
     {
         $requester = User::factory()->create(['email' => 'rh@acarts.be', 'notify_signed' => false]);

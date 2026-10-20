@@ -14,7 +14,7 @@
 <a class="back" href="{{ route('dashboard') }}">← Accueil</a>
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
     <div><p class="eyebrow">{{ $d->document_type ?: 'Signature' }} · {{ $d->requester->name }} · avant le {{ $d->expires_at->format('d/m/Y') }}</p><h1 class="page-title mb-0">{{ $d->title }}</h1></div>
-    <span class="small text-muted" data-save-state></span>
+    <span class="small text-muted" data-save-state role="status" aria-live="polite"></span>
 </div>
 @if($batchPosition)<p class="eyebrow">Lot · document {{ $batchPosition[0] }} sur {{ $batchPosition[1] }}</p>@endif
 @if($eidAvailable)
@@ -43,6 +43,12 @@
         <div class="form-check mb-1"><input type="hidden" name="show_job_title" value="0"><input class="form-check-input" type="checkbox" name="show_job_title" value="1" id="show_job_title" @checked(old('show_job_title', $signOptions['show_job_title'] ?? filled($me->job_title)))><label class="form-check-label" for="show_job_title">Qualité</label></div>
         <input class="form-control form-control-sm mb-2 @error('job_title') is-invalid @enderror" name="job_title" maxlength="120" value="{{ old('job_title', $me->job_title) }}" placeholder="Directeur, professeur…" aria-label="Qualité">
         <div class="form-check"><input type="hidden" name="show_date" value="0"><input class="form-check-input" type="checkbox" name="show_date" value="1" id="show_date" @checked(old('show_date', $signOptions['show_date'] ?? true))><label class="form-check-label" for="show_date">Date et heure</label></div>
+        <p class="form-label mt-3 mb-1" id="sign-preview-label">Aperçu</p>
+        <div class="sign-preview" data-sign-preview data-name="{{ $me->signatureName() }}" aria-labelledby="sign-preview-label">
+            @if($me->signature_path)<img src="{{ route('profile.signature.show', ['v' => $me->updated_at?->timestamp]) }}" alt="Votre image de signature">@endif
+            <div data-preview-lines></div>
+        </div>
+        <div class="form-check mt-3"><input class="form-check-input @error('consent') is-invalid @enderror" type="checkbox" name="consent" value="1" id="consent" required><label class="form-check-label" for="consent">J’ai lu le document « {{ $d->title }} » et je confirme le signer.</label></div>
     </div>
     @if($eidAvailable)<p class="small text-muted px-3 mb-0" data-eid-progress data-sign-only="eid" role="status" aria-live="polite">Gardez la carte dans le lecteur : Web eID vous demandera votre code PIN de signature.</p>@endif
     <div class="modal-footer">

@@ -16,10 +16,16 @@
             <div><span @class(['num', 'num--done' => $signature->status === 'signed'])>{{ $signature->status === 'signed' ? '✓' : $loop->iteration }}</span><div class="flex-grow-1"><strong>{{ $signature->signer_name }}</strong><div class="small text-muted">{{ $signature->signer_email }}@if($signature->signed_at) · {{ $signature->signed_at->format('d/m/Y H:i') }}@endif @if($signature->certificate_info) · carte eID : {{ $signature->certificate_info['subject'] ?? '' }}@endif</div></div><span class="status-badge status-{{ $signature->status }}">{{ $labels[$signature->status] ?? $signature->status }}</span></div>
         @endforeach
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        @if($participant)<a href="{{ route('documents.file', [$document, 'download' => 1]) }}" class="btn btn-primary">Télécharger</a><a href="{{ route('documents.file',$document) }}" class="btn btn-outline-primary" target="_blank" rel="noopener">Voir</a>@endif
-        @if($isRequester && $document->status === 'pending')<a href="{{ route('documents.edit',$document) }}" class="btn btn-outline-primary">Placement</a><form method="post" action="{{ route('documents.cancel',$document) }}">@csrf @method('DELETE')<button class="btn btn-outline-danger">Annuler</button></form>@endif
-        @if($isRequester && $document->status === 'signed')<button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#revokeModal">Révoquer</button>@endif
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        @if($participant)<a href="{{ route('documents.file', [$document, 'download' => 1]) }}" class="btn btn-primary">Télécharger</a><a href="{{ route('documents.file',$document) }}" class="btn btn-outline-primary" target="_blank" rel="noopener">Ouvrir le PDF<span class="visually-hidden"> (nouvel onglet)</span></a>@endif
+        @if($isRequester && $document->status === 'pending')<a href="{{ route('documents.edit',$document) }}" class="btn btn-outline-primary">Modifier le placement</a>@endif
+        {{-- Actions destructives : à l'écart des actions courantes, toujours confirmées. --}}
+        @if($isRequester && in_array($document->status, ['pending', 'signed'], true))
+            <div class="ms-auto ps-3 border-start">
+                @if($document->status === 'pending')<form method="post" action="{{ route('documents.cancel',$document) }}" data-confirm="Annuler la demande « {{ $document->title }} » ? Les signataires ne pourront plus signer.">@csrf @method('DELETE')<button class="btn btn-outline-danger">Annuler la demande</button></form>@endif
+                @if($document->status === 'signed')<button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#revokeModal">Révoquer le document</button>@endif
+            </div>
+        @endif
     </div>
 </div><aside class="col-lg-4">
     <div class="band">Journal</div>
