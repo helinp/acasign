@@ -2,25 +2,26 @@
 @section('title', 'Placement')
 @section('content')
 @php($placements = $document->signatureRequests->map(fn($s) => ['id'=>$s->id,'label'=>$s->signer_name,'page'=>$s->page,'x'=>$s->position_x,'y'=>$s->position_y,'width'=>$s->width,'height'=>$s->height]))
-<div class="steps" aria-label="Étapes"><span class="is-done">1 · Document</span><span class="is-on">2 · Placement</span></div>
+<ol class="steps steps-counter" aria-label="Étapes"><li class="step-item">Document</li><li class="step-item active" aria-current="step">Placement</li></ol>
 @if($batch->count() > 1)<p class="eyebrow">Lot · document {{ $position + 1 }} sur {{ $batch->count() }}</p>@endif
-@if($document->usesEid())<div class="alert alert-warning py-2">Signature par carte eID : les champs à compléter ne sont pas disponibles pour ce document.</div>@endif
+@if($document->usesEid())<x-alert type="info">Signature par carte eID : les champs à compléter ne sont pas disponibles pour ce document.</x-alert>@endif
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
-    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0">Glissez chaque cadre à sa place, ou cliquez-le puis cliquez à l’endroit voulu. Au clavier : Tab pour choisir, flèches pour déplacer. Tout est enregistré automatiquement.</p></div>
-    <div class="d-flex align-items-center gap-3"><span class="small text-muted" data-save-state role="status" aria-live="polite"></span>@if($nextUrl)<a href="{{ $nextUrl }}" class="btn btn-primary">Document suivant →</a>@else<a href="{{ $finishUrl }}" class="btn btn-primary">{{ $finishLabel }}</a>@endif</div>
+    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0"><x-icon name="drag-drop" class="me-1" />Glissez chaque cadre à sa place, ou cliquez-le puis cliquez à l’endroit voulu. Au clavier : Tab pour choisir, flèches pour déplacer. Tout est enregistré automatiquement.</p></div>
+    <div class="d-flex align-items-center gap-3"><span class="small text-muted" data-save-state role="status" aria-live="polite"></span>@if($nextUrl)<a href="{{ $nextUrl }}" class="btn btn-primary">Document suivant<x-icon name="arrow-right" class="icon-end" /></a>@else<a href="{{ $finishUrl }}" class="btn btn-primary"><x-icon :name="$finishIcon" />{{ $finishLabel }}</a>@endif</div>
 </div>
 <div class="row g-4">
     <aside class="col-lg-3">
-        <div class="band">Signataires</div>
+        <div class="band"><span class="band__title"><x-icon name="users" />Signataires</span></div>
         <div class="list-rows mb-3">@foreach($document->signatureRequests as $signature)<div><span class="num">{{ $loop->iteration }}</span><div class="small"><strong class="d-block">{{ $signature->signer_name }}</strong>Page {{ $signature->page }}</div></div>@endforeach</div>
         @unless($document->usesEid())
-        <div class="band">Champs à compléter</div>
+        <div class="band"><span class="band__title"><x-icon name="cursor-text" />Champs à compléter</span></div>
         <div class="panel p-3">
             <label class="form-label small mb-1" for="field-signer">Par</label>
             <select class="form-select form-select-sm mb-2" id="field-signer" data-field-signer>@foreach($document->signatureRequests->where('status', 'pending') as $signature)<option value="{{ $signature->id }}">{{ $signature->signer_name }}</option>@endforeach</select>
             <input class="form-control form-control-sm mb-2" data-field-label maxlength="80" placeholder="Libellé (facultatif)" aria-label="Libellé du champ">
             <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="field-required" data-field-required><label class="form-check-label small" for="field-required">Obligatoire</label></div>
-            <div class="d-flex gap-1"><button type="button" class="btn btn-sm btn-outline-primary flex-fill" data-add-field="date">Date</button><button type="button" class="btn btn-sm btn-outline-primary flex-fill" data-add-field="checkbox">Coche</button><button type="button" class="btn btn-sm btn-outline-primary flex-fill" data-add-field="text">Texte</button></div>
+            <p class="small text-muted mb-1">Ajouter :</p>
+            <div class="d-grid gap-1"><button type="button" class="btn btn-sm btn-outline-primary" data-add-field="date"><x-icon name="calendar" />Date</button><button type="button" class="btn btn-sm btn-outline-primary" data-add-field="checkbox"><x-icon name="checkbox" />Case à cocher</button><button type="button" class="btn btn-sm btn-outline-primary" data-add-field="text"><x-icon name="cursor-text" />Texte libre</button></div>
         </div>
         @endunless
     </aside>

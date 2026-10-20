@@ -17,6 +17,6 @@
         @if($logoPath)<div class="d-flex align-items-center gap-3 mb-2"><img src="{{ route('branding.logo', ['v' => substr(md5($logoPath), 0, 8)]) }}" alt="Logo actuel" style="height:48px;width:auto"><label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="remove_logo" value="1"> <span class="small">Retirer</span></label></div>@endif
         <input class="form-control @error('logo') is-invalid @enderror" type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/webp">
     </div>
-    <button class="btn btn-primary">Enregistrer</button>
+    <button class="btn btn-primary"><x-icon name="device-floppy" />Enregistrer</button>
 </form>
 @endsection

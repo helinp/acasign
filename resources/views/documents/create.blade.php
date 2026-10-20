@@ -5,9 +5,9 @@
     // Attributs d'accessibilité d'un champ en erreur (message relié via aria-describedby).
     $described = fn (string $key, string $id) => $errors->has($key) ? 'aria-describedby='.$id.'-error aria-invalid=true' : '';
 @endphp
-<a class="back" href="{{ route('dashboard') }}">← Accueil</a>
+<a class="back" href="{{ route('dashboard') }}"><x-icon name="arrow-left" />Accueil</a>
 <h1 class="page-title">Nouvelle demande</h1>
-<div class="steps" aria-label="Étapes"><span class="is-on" aria-current="step">1 · Document</span><span>2 · Placement</span></div>
+<ol class="steps steps-counter" aria-label="Étapes"><li class="step-item active" aria-current="step">Document</li><li class="step-item">Placement</li></ol>
 <form method="post" action="{{ route('documents.store') }}" enctype="multipart/form-data" class="panel" style="max-width:760px" novalidate>@csrf
     <div class="mb-3">
         <label class="form-label" for="title">Titre</label>
@@ -28,7 +28,7 @@
     </div>
     <div class="mb-3">
         <label class="form-label" for="documents">Fichiers PDF <span class="text-muted small">un ou plusieurs · 25 Mo et 200 pages max. chacun</span></label>
-        <input type="file" class="form-control @if($errors->has('documents') || $errors->has('documents.*') || $errors->has('document')) is-invalid @endif" id="documents" name="documents[]" accept="application/pdf" multiple required data-file-list aria-describedby="documents-help">
+        <input type="file" class="form-control drop-zone @if($errors->has('documents') || $errors->has('documents.*') || $errors->has('document')) is-invalid @endif" id="documents" name="documents[]" accept="application/pdf" multiple required data-file-list aria-describedby="documents-help">
         <div class="small text-muted mt-1" id="documents-help">Plusieurs fichiers : un document par PDF, avec les mêmes signataires.</div>
         <ul class="file-list" data-file-list-output aria-live="polite"></ul>
         <x-field-error name="documents" />
@@ -36,15 +36,15 @@
         @foreach($errors->get('documents.*') as $messages)<div class="invalid-feedback d-block">{{ $messages[0] }}</div>@endforeach
     </div>
     <fieldset class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2"><legend class="form-label mb-0 w-auto">Signataires</legend><button class="btn btn-sm btn-outline-primary" type="button" data-add-signer>+ Ajouter</button></div>
+        <div class="d-flex justify-content-between align-items-center mb-2"><legend class="form-label mb-0 w-auto">Signataires</legend><button class="btn btn-sm btn-outline-primary" type="button" data-add-signer><x-icon name="user-plus" />Ajouter un signataire</button></div>
         <label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="self_sign" value="1" data-self-sign @checked(old('self_sign'))> <span>Je signe moi-même <span class="text-muted small">({{ auth()->user()->email }})</span></span></label>
         <div data-signer-list id="signers">
-            @foreach(old('signers',['']) as $index => $email)<div class="input-group mb-2"><input class="form-control @error('signers.'.$index) is-invalid @enderror" type="email" id="signers-{{ $index }}" name="signers[]" value="{{ $email }}" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger" type="button" data-remove-signer aria-label="Retirer ce signataire">×</button></div><x-field-error :name="'signers.'.$index" />@endforeach
+            @foreach(old('signers',['']) as $index => $email)<div class="input-group mb-2"><input class="form-control @error('signers.'.$index) is-invalid @enderror" type="email" id="signers-{{ $index }}" name="signers[]" value="{{ $email }}" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger btn-icon" type="button" data-remove-signer aria-label="Retirer ce signataire" title="Retirer ce signataire"><x-icon name="x" /></button></div><x-field-error :name="'signers.'.$index" />@endforeach
         </div>
         <x-field-error name="signers" />
         <label class="form-check mt-2"><input class="form-check-input" type="checkbox" name="signer_can_move" value="1" @checked(old('signer_can_move'))> <span>Autoriser les signataires à déplacer leur cadre de signature</span></label>
         @include('partials.known-users-datalist')
     </fieldset>
-    <button class="btn btn-primary">Continuer vers le placement →</button>
+    <button class="btn btn-primary">Continuer vers le placement<x-icon name="arrow-right" class="icon-end" /></button>
 </form>
 @endsection

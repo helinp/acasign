@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DocumentFilterRequest;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Jobs\DispatchDocumentNotification;
 use App\Models\Document;
@@ -20,68 +21,95 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class DocumentController extends Controller
 {
-    /**
-     * Statuts regroupés par onglet de la liste des documents.
-     *
-     * @var array<string, list<string>>
-     */
-    private const INDEX_TABS = [
-        'signed' => ['signed'],
-        'pending' => ['pending'],
-        'closed' => ['rejected', 'cancelled', 'expired', 'revoked'],
-    ];
+    /** Nombre maximal de PDF dans un téléchargement groupé. */
+    private const ARCHIVE_LIMIT = 200;
 
     /**
-     * Documents dont l'utilisateur est demandeur ou signataire, par onglet (signés, en cours, clos).
+     * Documents dont l'utilisateur est demandeur ou signataire, par onglet (signés, en cours, clos),
+     * avec recherche (titre, personne), période, type, rôle et tri — utilisable avec des centaines de documents.
      */
-    public function index(Request $request): View
+    public function index(DocumentFilterRequest $request): View
     {
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:120'],
-            'type' => ['nullable', 'string', 'max:80'],
-            'role' => ['nullable', 'in:requester,signer'],
-            'status' => ['nullable', 'in:'.implode(',', array_keys(self::INDEX_TABS))],
-            'sort' => ['nullable', 'in:recent,oldest,title,deadline'],
-        ]);
-        $tab = $filters['status'] ?? 'signed';
-        $sort = $filters['sort'] ?? 'recent';
-        $user = $request->user();
-        $email = mb_strtolower($user->email);
-        $involved = fn ($query) => $query->where('signer_email', $email);
-
-        // Mêmes filtres (rôle, recherche, type) pour la liste et les compteurs des onglets.
-        $filtered = fn () => Document::query()
-            ->where(fn ($query) => match ($filters['role'] ?? null) {
-                'requester' => $query->where('requester_id', $user->id),
-                'signer' => $query->whereHas('signatureRequests', $involved),
-                default => $query->where('requester_id', $user->id)->orWhereHas('signatureRequests', $involved),
-            })
-            ->when($filters['q'] ?? null, fn ($query, string $q) => $query->whereRaw('LOWER(title) LIKE ?', ['%'.mb_strtolower($q).'%']))
-            ->when($filters['type'] ?? null, fn ($query, string $type) => $query->where('document_type', $type));
-
-        $dateColumn = $tab === 'signed' ? 'completed_at' : 'created_at';
-        $documents = $filtered()
-            ->with(['requester', 'signatureRequests'])
-            ->whereIn('status', self::INDEX_TABS[$tab])
-            ->when($sort === 'recent', fn ($query) => $query->orderByDesc($dateColumn))
-            ->when($sort === 'oldest', fn ($query) => $query->orderBy($dateColumn))
-            ->when($sort === 'title', fn ($query) => $query->orderBy('title'))
-            ->when($sort === 'deadline', fn ($query) => $query->orderBy('expires_at'))
-            ->paginate(25)
-            ->withQueryString();
+        $filters = $request->validated();
+        $tab = $request->tab();
+        $dateColumn = self::dateColumn($tab);
+        // Mêmes filtres pour la liste et les compteurs des onglets (chaque onglet filtre sur sa propre date).
+        $filtered = fn (string $tabKey) => Document::query()
+            ->involving($request->user(), $filters['role'] ?? null)
+            ->filtered($filters, self::dateColumn($tabKey))
+            ->whereIn('status', DocumentFilterRequest::TABS[$tabKey]);
 
         return view('documents.index', [
-            'documents' => $documents,
+            'documents' => $filtered($tab)->with(['requester', 'signatureRequests'])->sorted($request->sort(), $dateColumn)->paginate($request->perPage())->withQueryString(),
             'filters' => $filters,
+            'activeFilters' => $request->activeFilters(),
             'tab' => $tab,
-            'sort' => $sort,
-            'counts' => collect(self::INDEX_TABS)->map(fn (array $statuses) => $filtered()->whereIn('status', $statuses)->count()),
+            'sort' => $request->sort(),
+            'perPage' => $request->perPage(),
+            'counts' => collect(DocumentFilterRequest::TABS)->map(fn (array $statuses, string $tabKey) => $filtered($tabKey)->count()),
             'documentTypes' => DocumentType::orderBy('name')->pluck('name'),
+            'knownPeople' => $this->knownPeople($request->user()),
         ]);
+    }
+
+    /**
+     * Téléchargement groupé (ZIP) des PDF signés : la sélection cochée, ou à défaut tous les documents signés filtrés (200 max.).
+     */
+    public function archive(DocumentFilterRequest $request, AuditService $audit): BinaryFileResponse|RedirectResponse
+    {
+        $ids = $request->validate(['documents' => ['nullable', 'array', 'max:'.self::ARCHIVE_LIMIT], 'documents.*' => ['uuid']])['documents'] ?? [];
+        $documents = Document::query()
+            ->involving($request->user(), $request->validated('role'))
+            ->where('status', 'signed')
+            ->when($ids, fn ($query) => $query->whereIn('id', $ids), fn ($query) => $query->filtered($request->validated(), 'completed_at'))
+            ->sorted($request->sort(), 'completed_at')
+            ->limit(self::ARCHIVE_LIMIT)
+            ->get()
+            ->filter(fn (Document $document) => Storage::disk('local')->exists($document->file_path));
+
+        if ($documents->isEmpty()) {
+            return back()->withErrors(['documents' => 'Aucun PDF signé à télécharger pour cette sélection.']);
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'signes-');
+        $zip = new ZipArchive;
+        $zip->open($path, ZipArchive::OVERWRITE);
+        $names = [];
+        foreach ($documents as $document) {
+            $name = $document->downloadName();
+            $names[$name] = ($names[$name] ?? 0) + 1;
+            $zip->addFile(Storage::disk('local')->path($document->file_path), $names[$name] > 1 ? pathinfo($name, PATHINFO_FILENAME).'-'.$names[$name].'.pdf' : $name);
+            $audit->record('document.downloaded', $document, $request->user(), ['archive' => true], $request);
+        }
+        $zip->close();
+
+        return response()->download($path, 'documents-signes-'.now()->format('Y-m-d').'.zip', ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
+    /** Colonne de date d'un onglet : date de signature complète pour les signés, de création sinon. */
+    private static function dateColumn(string $tab): string
+    {
+        return $tab === 'signed' ? 'completed_at' : 'created_at';
+    }
+
+    /**
+     * Demandeurs et signataires déjà croisés par l'utilisateur, proposés dans le filtre « Personne ».
+     *
+     * @return Collection<int, string>
+     */
+    private function knownPeople(User $user): Collection
+    {
+        $documentIds = Document::query()->involving($user)->select('id');
+
+        return SignatureRequest::query()->whereIn('document_id', $documentIds)->distinct()->pluck('signer_name')
+            ->merge(User::query()->whereIn('id', Document::query()->involving($user)->select('requester_id'))->pluck('name'))
+            ->filter()->unique()->sort()->values();
     }
 
     /**
@@ -226,7 +254,8 @@ class DocumentController extends Controller
             'position' => $position,
             'nextUrl' => $next ? route('documents.edit', $next) : null,
             'finishUrl' => $mySignature ? route('signatures.show', $mySignature) : route('documents.show', $document),
-            'finishLabel' => $mySignature ? 'Terminer et signer →' : 'Terminer ✓',
+            'finishLabel' => $mySignature ? 'Terminer et signer' : 'Terminer',
+            'finishIcon' => $mySignature ? 'signature' : 'check',
         ]);
     }
 
@@ -293,24 +322,34 @@ class DocumentController extends Controller
         return back()->with('success', 'Le document est désormais signalé comme révoqué.');
     }
 
-    public function export(Request $request): StreamedResponse
+    /**
+     * Export CSV (séparateur « ; », compatible Excel) de la liste telle qu'elle est filtrée et triée à l'écran.
+     */
+    public function export(DocumentFilterRequest $request): StreamedResponse
     {
-        $documents = Document::with('signatureRequests')->where(function ($q) use ($request) {
-            $q->where('requester_id', $request->user()->id)
-                ->orWhereHas('signatureRequests', fn ($sq) => $sq->where('signer_email', mb_strtolower($request->user()->email)));
-        })->latest()->get();
+        $tab = $request->tab();
+        $documents = Document::query()
+            ->involving($request->user(), $request->validated('role'))
+            ->filtered($request->validated(), self::dateColumn($tab))
+            ->whereIn('status', DocumentFilterRequest::TABS[$tab])
+            ->with(['requester', 'signatureRequests'])
+            ->sorted($request->sort(), self::dateColumn($tab))
+            ->get();
+        $labels = ['pending' => 'En attente', 'signed' => 'Signé', 'rejected' => 'Refusé', 'cancelled' => 'Annulé', 'expired' => 'Expiré', 'revoked' => 'Révoqué'];
 
-        return response()->streamDownload(function () use ($documents) {
+        return response()->streamDownload(function () use ($documents, $labels) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Référence', 'Titre', 'Statut', 'Demandeur', 'Signataires', 'Créé le', 'Signé le']);
+            fwrite($out, "\u{FEFF}");
+            fputcsv($out, ['Titre', 'Type', 'Statut', 'Demandeur', 'Signataires', 'Créé le', 'Signé le', 'Référence'], ';');
             foreach ($documents as $document) {
                 fputcsv($out, [
-                    $document->id, $document->title, $document->status, $document->requester_id,
-                    $document->signatureRequests->pluck('signer_email')->join('; '), $document->created_at, $document->completed_at,
-                ]);
+                    $document->title, $document->document_type, $labels[$document->status] ?? $document->status, $document->requester?->name,
+                    $document->signatureRequests->pluck('signer_name')->join(', '), $document->created_at?->format('d/m/Y H:i'),
+                    $document->completed_at?->format('d/m/Y H:i'), $document->id,
+                ], ';');
             }
             fclose($out);
-        }, 'historique-signatures.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }, 'documents-'.$tab.'-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     private function authorizeMetadata(Request $request, Document $document): void

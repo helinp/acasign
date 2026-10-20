@@ -3,8 +3,8 @@
 @section('content')
 <h1 class="page-title">Administration</h1>
 @include('admin.partials.tabs')
-<div class="band">Utilisateurs <span>{{ $users->total() }}</span></div>
-<div class="border border-top-0"><table class="table align-middle table-stack">
+<div class="band"><span class="band__title"><x-icon name="users" />Utilisateurs</span> <span>{{ $users->total() }}</span></div>
+<div class="card border-top-0"><table class="table card-table align-middle table-stack">
     <thead><tr><th scope="col">Utilisateur</th><th scope="col">Dernière connexion</th><th scope="col">Rôle et droits</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
     <tbody>
     @foreach($users as $user)
@@ -19,7 +19,7 @@
                     <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="disabled" value="1" form="{{ $formId }}" @checked($user->disabled_at)> <span>Désactivé</span></label>
                 </div>
             </td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-primary" form="{{ $formId }}">Enregistrer<span class="visually-hidden"> {{ $user->name }}</span></button></td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-primary" form="{{ $formId }}"><x-icon name="device-floppy" />Enregistrer<span class="visually-hidden"> {{ $user->name }}</span></button></td>
         </tr>
     @endforeach
     </tbody>

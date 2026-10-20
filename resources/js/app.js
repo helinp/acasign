@@ -1,7 +1,8 @@
 import 'bootstrap';
+import { icon } from './icons.js';
 // Lignes de tableau cliquables (data-href), sans gêner les liens et boutons qu'elles contiennent.
 document.querySelectorAll('tr[data-href]').forEach(row => row.addEventListener('click', event => {
-    if (event.target.closest('a, button, input, select, form')) return;
+    if (event.target.closest('a, button, input, select, form, td.w-1')) return;
     window.location.href = row.dataset.href;
 }));
 
@@ -46,7 +47,7 @@ document.querySelectorAll('input[type=file][data-file-list]').forEach(input => {
         output.replaceChildren(...[...input.files].map((file, index) => {
             const item = document.createElement('li');
             item.append(`${file.name} · ${size(file.size)}${file.size > 25 * 1048576 ? ' — trop volumineux' : ''}`);
-            const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-link text-danger p-0 ms-2', textContent: 'Retirer' });
+            const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-ghost-danger ms-2', innerHTML: `${icon('x')}Retirer` });
             remove.setAttribute('aria-label', `Retirer ${file.name}`);
             remove.addEventListener('click', () => {
                 const kept = new DataTransfer();
@@ -150,12 +151,12 @@ if (stage) {
         const bar = document.createElement('div');
         bar.className = 'pdf-toolbar';
         bar.innerHTML = `
-            <label class="small mb-0">Page <select class="form-select form-select-sm d-inline-block w-auto" data-go-page aria-label="Aller à la page">${pages.map((_, index) => `<option value="${index + 1}">${index + 1}</option>`).join('')}</select> sur ${count}</label>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-go-signature>Aller à la signature</button>
+            <label class="small mb-0">${icon('files', 'me-1')}Page <select class="form-select form-select-sm d-inline-block w-auto" data-go-page aria-label="Aller à la page">${pages.map((_, index) => `<option value="${index + 1}">${index + 1}</option>`).join('')}</select> sur ${count}</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-go-signature>${icon('focus-2')}Aller à la signature</button>
             <span class="ms-auto d-inline-flex gap-1" role="group" aria-label="Zoom">
-                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="-0.15" aria-label="Réduire">−</button>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="0" aria-label="Taille initiale">100 %</button>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="0.15" aria-label="Agrandir">+</button>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-icon" data-zoom="-0.15" aria-label="Réduire" title="Réduire">${icon('zoom-out')}</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-zoom="0" aria-label="Taille initiale" title="Taille initiale">100 %</button>
+                <button type="button" class="btn btn-sm btn-outline-primary btn-icon" data-zoom="0.15" aria-label="Agrandir" title="Agrandir">${icon('zoom-in')}</button>
             </span>`;
         stage.before(bar);
         let zoom = 1;
@@ -195,8 +196,30 @@ if (stage) {
 const signerList = document.querySelector('[data-signer-list]');
 document.querySelector('[data-add-signer]')?.addEventListener('click', () => {
     const row = document.createElement('div'); row.className = 'input-group mb-2';
-    row.innerHTML = '<input class="form-control" type="email" name="signers[]" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger" type="button" aria-label="Retirer">×</button>';
+    row.innerHTML = `<input class="form-control" type="email" name="signers[]" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger btn-icon" type="button" aria-label="Retirer ce signataire" title="Retirer ce signataire">${icon('x')}</button>`;
     row.querySelector('button').addEventListener('click', () => row.remove()); signerList.appendChild(row); row.querySelector('input').focus();
 });
 document.querySelectorAll('[data-remove-signer]').forEach(button => button.addEventListener('click', () => button.closest('.input-group').remove()));
 
+
+// Filtres de la liste : les listes déroulantes s'appliquent dès le choix ; une date saisie remplace le raccourci de période.
+document.querySelectorAll('[data-auto-submit]').forEach(select => select.addEventListener('change', () => select.form.requestSubmit()));
+document.querySelectorAll('#filter-from, #filter-to').forEach(input => input.addEventListener('change', () => input.form.querySelector('[data-period]')?.remove()));
+
+// Téléchargement groupé : case « tout sélectionner », compteur sur le bouton, « Tout télécharger » ignore la sélection.
+const archiveForm = document.getElementById('archive-form');
+if (archiveForm) {
+    const rows = [...document.querySelectorAll('[data-select-row]')];
+    const selectAll = document.querySelector('[data-select-all]');
+    const selectedButton = archiveForm.querySelector('[data-archive-selected]');
+    const update = () => {
+        const count = rows.filter(row => row.checked).length;
+        selectedButton.disabled = count === 0;
+        archiveForm.querySelector('[data-archive-count]').textContent = count ? ` (${count})` : '';
+        if (selectAll) { selectAll.checked = count > 0 && count === rows.length; selectAll.indeterminate = count > 0 && count < rows.length; }
+    };
+    rows.forEach(row => row.addEventListener('change', update));
+    selectAll?.addEventListener('change', () => { rows.forEach(row => { row.checked = selectAll.checked; }); update(); });
+    archiveForm.querySelector('[data-archive-all]')?.addEventListener('click', () => rows.forEach(row => { row.checked = false; }));
+    update();
+}
