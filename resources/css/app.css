@@ -43,7 +43,7 @@ a:not(.btn, .brand, .tabs a, .head-nav a, .row-link):hover { background: var(--a
 .brand { display: flex; align-items: center; gap: .6rem; }
 .brand img { height: 42px; width: auto; max-width: 80px; object-fit: contain; }
 .brand__name { display: block; color: var(--ac-pink); font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
-.brand__sub { display: block; color: var(--ac-violet); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-top: 3px; }
+.brand__sub { display: block; color: var(--ac-violet); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; margin-top: 3px; }
 .util a, .util__btn { display: inline-block; color: #fff; background: none; border: 0; padding: 4px 2px; min-height: 24px; font: inherit; letter-spacing: inherit; text-transform: uppercase; }
 .util a:hover, .util__btn:hover { background: none; box-shadow: none; text-decoration: underline; }
 .head-nav { align-items: center; gap: 1.25rem; font-weight: 600; font-size: 16px; }
@@ -73,7 +73,7 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 
 /* Boutons : noir, majuscules, survol = inversion */
 .btn { border-radius: 0; border-width: 2px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .6rem 1.1rem; }
-.btn-sm { font-size: 11.5px; padding: .3rem .65rem; }
+.btn-sm { font-size: 12.5px; padding: .35rem .7rem; }
 .btn-lg { font-size: 14px; padding: .8rem 1.4rem; }
 .btn-primary, .btn-coral { --bs-btn-bg: var(--ac-noir); --bs-btn-border-color: var(--ac-noir); --bs-btn-color: #fff; --bs-btn-hover-bg: transparent; --bs-btn-hover-border-color: var(--ac-noir); --bs-btn-hover-color: var(--ac-noir); --bs-btn-active-bg: var(--ac-noir); --bs-btn-active-color: #fff; --bs-btn-disabled-bg: var(--ac-gris); --bs-btn-disabled-border-color: var(--ac-gris); }
 .btn-coral { --bs-btn-bg: var(--ac-pink); --bs-btn-border-color: var(--ac-pink); --bs-btn-hover-color: var(--ac-pink); --bs-btn-hover-border-color: var(--ac-pink); --bs-btn-active-bg: var(--ac-pink); }
@@ -97,7 +97,7 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 /* Tableaux */
 .table { --bs-table-bg: #fff; margin-bottom: 0; }
 .table > :not(caption) > * > * { padding: .75rem; border-bottom-color: var(--ac-ligne); }
-.table thead th { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ac-gris-2); background: #fff; }
+.table thead th { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ac-gris-2); background: #fff; }
 
 /* Onglets / filtres (pastilles du site) */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -105,7 +105,7 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
 .tabs a.is-on, .tabs a:hover { background: var(--ac-noir); color: #fff; }
 
 /* Statuts : étiquettes carrées en majuscules */
-.status-badge { display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+.status-badge { display: inline-block; padding: 3px 8px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 .status-pending { background: var(--ac-jaune); color: var(--ac-noir); }
 .status-signed { background: var(--ac-green); color: #fff; }
 .status-rejected, .status-revoked { background: var(--ac-rouge); color: #fff; }
@@ -193,7 +193,7 @@ tr[data-href]:hover > * { --bs-table-bg: var(--ac-fond); }
     .table-stack td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ac-gris-2); }
     .table-stack td.text-end { text-align: left !important; }
 }
-.tabs__count { display: inline-block; min-width: 1.4em; margin-left: .25rem; padding: 0 .3em; background: var(--ac-ligne); color: var(--ac-noir); font-size: 11.5px; text-align: center; }
+.tabs__count { display: inline-block; min-width: 1.4em; margin-left: .25rem; padding: 0 .3em; background: var(--ac-ligne); color: var(--ac-noir); font-size: 12px; text-align: center; }
 .tabs a.is-on .tabs__count { background: #fff; }
 .row-title { font-weight: 700; }
 .due-soon { display: inline-block; padding: 2px 6px; background: var(--ac-jaune); color: var(--ac-noir); font-size: 12px; font-weight: 700; }

@@ -36,5 +36,5 @@
     </div>
 </section>
 @endif
-<p><a href="{{ route('documents.index') }}"><strong>Tous mes documents →</strong></a></p>
+<p><a href="{{ route('documents.index') }}"><strong>Voir tous mes documents →</strong></a></p>
 @endsection

@@ -14,17 +14,19 @@ class SettingController extends Controller
 {
     public function edit(): View
     {
-        return view('admin.settings', ['entityName' => Setting::value('entity_name'), 'logoPath' => Setting::logoPath()]);
+        return view('admin.settings', ['entityName' => Setting::value('entity_name'), 'shortName' => Setting::value('entity_short_name'), 'logoPath' => Setting::logoPath()]);
     }
 
     public function update(Request $request, AuditService $audit): RedirectResponse
     {
         $data = $request->validate([
             'entity_name' => ['nullable', 'string', 'max:120'],
+            'entity_short_name' => ['nullable', 'string', 'max:30'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:1024', 'dimensions:max_width=2000,max_height=2000'],
             'remove_logo' => ['nullable', 'boolean'],
         ]);
         Setting::put('entity_name', filled($data['entity_name'] ?? null) ? trim($data['entity_name']) : null);
+        Setting::put('entity_short_name', filled($data['entity_short_name'] ?? null) ? trim($data['entity_short_name']) : null);
 
         $current = Setting::logoPath();
         if ($request->hasFile('logo') || $request->boolean('remove_logo')) {

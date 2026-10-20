@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Signatures') · {{ $entityName }}</title>
+    <title>@yield('title', 'Signatures') · {{ $shortName }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
@@ -23,7 +23,7 @@
 <header class="head"><div class="container">
     <a class="brand" href="{{ route('dashboard') }}">
         @if($logoUrl)<img src="{{ $logoUrl }}" alt="">@endif
-        <span><span class="brand__name">{{ $entityName }}</span><span class="brand__sub">Signature de documents</span></span>
+        <span><span class="brand__name" @if($shortName !== $entityName) title="{{ $entityName }}" @endif>{{ $shortName }}</span><span class="brand__sub">Signature de documents</span></span>
     </a>
     <button class="burger d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="head-nav collapse d-lg-flex" id="mainNav" aria-label="Navigation principale">

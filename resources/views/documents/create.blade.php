@@ -27,7 +27,7 @@
         </div>
     </div>
     <div class="mb-3">
-        <label class="form-label" for="documents">PDF <span class="text-muted small">un ou plusieurs · 25 Mo et 200 pages max. chacun</span></label>
+        <label class="form-label" for="documents">Fichiers PDF <span class="text-muted small">un ou plusieurs · 25 Mo et 200 pages max. chacun</span></label>
         <input type="file" class="form-control @if($errors->has('documents') || $errors->has('documents.*') || $errors->has('document')) is-invalid @endif" id="documents" name="documents[]" accept="application/pdf" multiple required data-file-list aria-describedby="documents-help">
         <div class="small text-muted mt-1" id="documents-help">Plusieurs fichiers : un document par PDF, avec les mêmes signataires.</div>
         <ul class="file-list" data-file-list-output aria-live="polite"></ul>

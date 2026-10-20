@@ -36,6 +36,12 @@ class Setting extends Model
         return static::value('entity_name') ?: (string) config('app.name');
     }
 
+    /** Nom court affiché dans l'en-tête (ex. « ACARTS! ») ; à défaut, le nom complet. */
+    public static function shortName(): string
+    {
+        return static::value('entity_short_name') ?: static::entityName();
+    }
+
     public static function logoPath(): ?string
     {
         return static::value('logo_path');
