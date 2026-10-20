@@ -66,6 +66,28 @@ class AuditEvent extends Model
         return $label;
     }
 
+    /** Icône Tabler de l'événement dans le journal de preuve (même famille d'action que les boutons). */
+    public function icon(): string
+    {
+        return match (true) {
+            str_ends_with($this->event, 'document.created') => 'file-plus',
+            str_starts_with($this->event, 'signature.signed') => 'signature',
+            str_ends_with($this->event, 'rejected') => 'thumb-down',
+            str_ends_with($this->event, 'delegated') => 'user-share',
+            str_ends_with($this->event, 'completed') => 'circle-check',
+            str_ends_with($this->event, 'cancelled') => 'circle-x',
+            str_ends_with($this->event, 'revoked') => 'ban',
+            str_ends_with($this->event, 'expired') => 'hourglass-off',
+            str_ends_with($this->event, 'reminded') => 'mail',
+            str_ends_with($this->event, 'purged') => 'trash',
+            str_contains($this->event, 'field') => 'cursor-text',
+            str_contains($this->event, 'position') || str_contains($this->event, 'placements') => 'drag-drop',
+            $this->event === 'document.downloaded' => 'download',
+            $this->event === 'document.viewed' => 'eye',
+            default => 'history',
+        };
+    }
+
     public function isRoutine(): bool
     {
         return in_array($this->event, self::ROUTINE, true);

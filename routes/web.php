@@ -27,6 +27,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
     Route::get('/documents/export.csv', [DocumentController::class, 'export'])->name('documents.export');
+    Route::post('/documents/archive', [DocumentController::class, 'archive'])->name('documents.archive');
     Route::get('/documents/create', [DocumentController::class, 'create'])->middleware('can.send')->name('documents.create');
     Route::post('/documents', [DocumentController::class, 'store'])->middleware('can.send')->name('documents.store');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');

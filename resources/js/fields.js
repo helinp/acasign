@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 import { makeMovable, markDragged } from './placement.js';
 
 /**
@@ -103,7 +104,7 @@ export function setupFields({ stage, pages, csrf }) {
 
     const removeButton = (zone, field) => {
         const button = document.createElement('button');
-        button.type = 'button'; button.className = 'field-remove'; button.textContent = '×';
+        button.type = 'button'; button.className = 'field-remove'; button.innerHTML = icon('x');
         button.setAttribute('aria-label', 'Supprimer le champ');
         button.addEventListener('click', async () => {
             const response = await request(fieldUrl(field.id), 'DELETE');

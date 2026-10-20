@@ -1,16 +1,16 @@
 {{-- Aide Web eID. $mode : 'auto' (étapes seulement en cas de problème) ou 'always' ; $action : 'sign' (bouton de signature) ou 'test' (lecture de la carte). --}}
 <div class="eid-help" data-eid-help="{{ $mode ?? 'auto' }}">
-    <div class="band">Signature avec la carte eID</div>
+    <div class="band"><span class="band__title"><x-icon name="id" />Signature avec la carte eID</span></div>
     <div class="panel">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <p class="eid-status is-checking mb-0" data-eid-status role="status" aria-live="polite">Vérification de l’installation…</p>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-eid-recheck>Vérifier à nouveau</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-eid-recheck><x-icon name="refresh" />Vérifier à nouveau</button>
         </div>
         @if(($action ?? null) === 'sign')
-            <button type="button" class="btn btn-coral btn-lg mt-3" data-eid-action data-bs-toggle="modal" data-bs-target="#signModal" disabled>Signer avec ma carte eID</button>
+            <button type="button" class="btn btn-coral btn-lg mt-3" data-eid-action data-bs-toggle="modal" data-bs-target="#signModal" disabled><x-icon name="id" />Signer avec ma carte eID</button>
         @elseif(($action ?? null) === 'test')
             <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
-                <button type="button" class="btn btn-primary" data-eid-action data-eid-test data-check-url="{{ route('profile.eid.check') }}" data-failure-url="{{ route('profile.eid.failure') }}" disabled>Tester ma carte</button>
+                <button type="button" class="btn btn-primary" data-eid-action data-eid-test data-check-url="{{ route('profile.eid.check') }}" data-failure-url="{{ route('profile.eid.failure') }}" disabled><x-icon name="id" />Tester ma carte</button>
                 <span class="small" data-eid-test-result role="status" aria-live="polite"></span>
             </div>
         @endif
