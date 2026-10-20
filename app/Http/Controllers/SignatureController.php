@@ -138,6 +138,7 @@ class SignatureController extends Controller
     public function position(Request $request, SignatureRequest $signatureRequest, AuditService $audit): JsonResponse
     {
         $this->authorizeSigner($request, $signatureRequest);
+        abort_unless($signatureRequest->document->signer_can_move, 403, 'Le demandeur a verrouillé l’emplacement de la signature.');
         $data = $request->validate([
             'page' => ['required', 'integer', 'min:1', 'max:'.$signatureRequest->document->page_count],
             'x' => ['required', 'numeric', 'between:0,0.95'], 'y' => ['required', 'numeric', 'between:0,0.95'],

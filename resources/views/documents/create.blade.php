@@ -42,6 +42,7 @@
             @foreach(old('signers',['']) as $index => $email)<div class="input-group mb-2"><input class="form-control @error('signers.'.$index) is-invalid @enderror" type="email" id="signers-{{ $index }}" name="signers[]" value="{{ $email }}" placeholder="prenom.nom@acarts.be" list="known-users" autocomplete="off" aria-label="Adresse d’un autre signataire"><button class="btn btn-outline-danger" type="button" data-remove-signer aria-label="Retirer ce signataire">×</button></div><x-field-error :name="'signers.'.$index" />@endforeach
         </div>
         <x-field-error name="signers" />
+        <label class="form-check mt-2"><input class="form-check-input" type="checkbox" name="signer_can_move" value="1" @checked(old('signer_can_move'))> <span>Autoriser les signataires à déplacer leur cadre de signature</span></label>
         @include('partials.known-users-datalist')
     </fieldset>
     <button class="btn btn-primary">Continuer vers le placement →</button>

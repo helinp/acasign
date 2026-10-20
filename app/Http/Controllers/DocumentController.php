@@ -159,6 +159,7 @@ class DocumentController extends Controller
                     'title' => Str::limit($data['title'], 180, ''),
                     'document_type' => $data['document_type'] ?? null,
                     'signature_method' => $method,
+                    'signer_can_move' => (bool) ($data['signer_can_move'] ?? false),
                     'status' => 'pending',
                     'original_name' => $file->getClientOriginalName(),
                     'file_path' => $relativePath,

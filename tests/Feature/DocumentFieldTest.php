@@ -84,6 +84,18 @@ class DocumentFieldTest extends TestCase
         $this->assertSame('pending', $signatureRequest->fresh()->status);
     }
 
+    public function test_signer_cannot_move_a_locked_signature_box(): void
+    {
+        [, $signer, $document, $signatureRequest] = $this->pendingDocument();
+        $geometry = ['page' => 1, 'x' => 0.2, 'y' => 0.3, 'width' => 0.28, 'height' => 0.12];
+
+        $this->actingAs($signer)->putJson(route('signatures.position', $signatureRequest), $geometry)->assertForbidden();
+
+        $document->update(['signer_can_move' => true]);
+        $this->actingAs($signer)->putJson(route('signatures.position', $signatureRequest), $geometry)->assertOk();
+        $this->assertSame(0.2, $signatureRequest->fresh()->position_x);
+    }
+
     public function test_printable_values_are_formatted(): void
     {
         $this->assertSame('19/10/2026', (new DocumentField(['type' => 'date', 'value' => '2026-10-19']))->printableValue());
