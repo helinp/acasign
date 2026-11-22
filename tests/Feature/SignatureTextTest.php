@@ -37,12 +37,14 @@ class SignatureTextTest extends TestCase
     {
         $user = User::factory()->create(['job_title' => 'Directrice']);
 
-        $this->actingAs($user)->put(route('profile.update'), ['sign_show_name' => '1', 'sign_show_job_title' => '0', 'sign_show_date' => '1'])
+        $this->actingAs($user)->put(route('profile.update'), ['sign_show_name' => '1', 'sign_show_job_title' => '0', 'sign_show_date' => '1', 'sign_show_qr' => '0'])
             ->assertSessionHasNoErrors();
 
         $this->assertTrue($user->refresh()->sign_show_name);
         $this->assertFalse($user->sign_show_job_title);
+        $this->assertFalse($user->sign_show_qr);
         $this->assertTrue(User::factory()->create()->refresh()->sign_show_job_title);
+        $this->assertTrue(User::factory()->create()->refresh()->sign_show_qr);
     }
 
     public function test_job_title_line_is_skipped_when_empty(): void

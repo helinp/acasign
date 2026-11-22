@@ -4,6 +4,8 @@ Application interne de signature simple de documents PDF. Elle utilise exclusive
 
 > AcaSign fournit une preuve de validation interne. Ce n’est pas une signature avancée ou qualifiée eIDAS.
 
+Le cachet final et la signature eID sont des signatures d’approbation, sans verrou DocMDP : une institution externe peut ensuite ajouter sa propre signature numérique au PDF téléchargé (par ex. Acrobat + carte eID) sans invalider celles d’AcaSign. Chaque signataire peut décocher le QR de vérification sous sa signature simple (choix par défaut dans *Mon profil*).
+
 ## Architecture
 
 - Laravel 13 / PHP 8.4, rendu serveur Blade et Tabler (Bootstrap 5)

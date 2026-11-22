@@ -20,6 +20,9 @@ if (preview) {
             checked('show_date') && `${preview.dataset.mode === 'eid' ? 'Signé avec eID le' : 'Signé le'} ${now}`,
         ].filter(Boolean);
         lines.replaceChildren(...(items.length ? items : ['(aucune mention)']).map(text => Object.assign(document.createElement('div'), { textContent: text })));
+        // Le QR de vérification n'existe que sur la signature sans eID.
+        const qr = preview.querySelector('[data-preview-qr]');
+        if (qr) qr.hidden = preview.dataset.mode === 'eid' || !checked('show_qr');
     };
     form.addEventListener('input', render);
     // La mention de date dépend du mode choisi (bouton « Signer sans eID » ou « avec ma carte eID »).

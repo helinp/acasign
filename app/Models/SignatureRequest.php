@@ -48,6 +48,14 @@ class SignatureRequest extends Model
         ], fn (?string $line) => filled($line)));
     }
 
+    /**
+     * QR de vérification sur le cartouche d'une signature simple (affiché sauf si le signataire l'a décoché).
+     */
+    public function showsQrCode(): bool
+    {
+        return (bool) ($this->display_options['show_qr'] ?? true);
+    }
+
     public function document(): BelongsTo
     {
         return $this->belongsTo(Document::class);

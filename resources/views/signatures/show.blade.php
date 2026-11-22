@@ -46,10 +46,12 @@
         <div class="form-check mb-1"><input type="hidden" name="show_job_title" value="0"><input class="form-check-input" type="checkbox" name="show_job_title" value="1" id="show_job_title" @checked(old('show_job_title', ($me->sign_show_job_title ?? true) && filled($me->job_title)))><label class="form-check-label" for="show_job_title">Qualité</label></div>
         <input class="form-control form-control-sm mb-2 @error('job_title') is-invalid @enderror" name="job_title" maxlength="120" value="{{ old('job_title', $me->job_title) }}" placeholder="Directeur, professeur…" aria-label="Qualité">
         <div class="form-check"><input type="hidden" name="show_date" value="0"><input class="form-check-input" type="checkbox" name="show_date" value="1" id="show_date" @checked(old('show_date', $me->sign_show_date ?? true))><label class="form-check-label" for="show_date">Date et heure</label></div>
+        @unless($eidOnly)<div class="form-check" data-sign-only="internal"><input type="hidden" name="show_qr" value="0"><input class="form-check-input" type="checkbox" name="show_qr" value="1" id="show_qr" @checked(old('show_qr', $me->sign_show_qr ?? true))><label class="form-check-label" for="show_qr">QR code de vérification</label></div>@endunless
         <p class="form-label mt-3 mb-1" id="sign-preview-label">Aperçu</p>
         <div class="sign-preview" data-sign-preview data-mode="{{ $eidOnly ? 'eid' : 'internal' }}" data-name="{{ $me->signatureName() }}" aria-labelledby="sign-preview-label">
             @if($me->signature_path)<img src="{{ route('profile.signature.show', ['v' => $me->updated_at?->timestamp]) }}" alt="Votre image de signature">@endif
             <div data-preview-lines></div>
+            @unless($eidOnly)<span class="sign-preview__qr" data-preview-qr aria-hidden="true">QR</span>@endunless
         </div>
         <div class="form-check mt-3"><input class="form-check-input @error('consent') is-invalid @enderror" type="checkbox" name="consent" value="1" id="consent" required><label class="form-check-label" for="consent">J’ai lu le document « {{ $d->title }} » et je confirme le signer.</label></div>
     </div>
