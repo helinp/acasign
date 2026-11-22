@@ -95,7 +95,7 @@ class PdfService
         if ($request->showsQrCode()) {
             $qrFile = tempnam(sys_get_temp_dir(), 'qr-').'.png';
             (new PngWriter)->write(new QrCode(
-                data: route('verify.show', $request->verification_code),
+                data: $request->verificationUrl(),
                 size: 320,
                 margin: 8,
             ))->saveToFile($qrFile);

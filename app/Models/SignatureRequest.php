@@ -56,6 +56,17 @@ class SignatureRequest extends Model
         return (bool) ($this->display_options['show_qr'] ?? true);
     }
 
+    /**
+     * Adresse de la page de vérification imprimée dans le QR code : VERIFY_URL (nom public) si défini, sinon APP_URL.
+     */
+    public function verificationUrl(): string
+    {
+        $path = route('verify.show', $this->verification_code, absolute: false);
+        $publicBase = config('app.verify_url');
+
+        return filled($publicBase) ? rtrim($publicBase, '/').$path : url($path);
+    }
+
     public function document(): BelongsTo
     {
         return $this->belongsTo(Document::class);

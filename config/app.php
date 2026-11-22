@@ -67,6 +67,14 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Adresse publique de la page de vérification (QR code des PDF signés), quand l'application
+    | n'est joignable qu'en interne (ex. APP_URL=https://sign.intra.acarts.be, VERIFY_URL=https://sign.acarts.be).
+    | Vide : on utilise APP_URL.
+    */
+
+    'verify_url' => env('VERIFY_URL'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
