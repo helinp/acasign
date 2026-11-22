@@ -90,13 +90,16 @@ class PdfService
         $source = Storage::disk('local')->path($document->file_path);
         $target = dirname($source).'/'.Str::uuid().'.pdf';
         $signatureFile = tempnam(sys_get_temp_dir(), 'signature-').'.png';
-        $qrFile = tempnam(sys_get_temp_dir(), 'qr-').'.png';
         file_put_contents($signatureFile, $signatureBytes);
-        (new PngWriter)->write(new QrCode(
-            data: route('verify.show', $request->verification_code),
-            size: 320,
-            margin: 8,
-        ))->saveToFile($qrFile);
+        $qrFile = null;
+        if ($request->showsQrCode()) {
+            $qrFile = tempnam(sys_get_temp_dir(), 'qr-').'.png';
+            (new PngWriter)->write(new QrCode(
+                data: route('verify.show', $request->verification_code),
+                size: 320,
+                margin: 8,
+            ))->saveToFile($qrFile);
+        }
 
         try {
             $pdf = $this->newPdf();
@@ -114,7 +117,9 @@ class PdfService
             $pdf->Output($target, 'F');
         } finally {
             @unlink($signatureFile);
-            @unlink($qrFile);
+            if ($qrFile !== null) {
+                @unlink($qrFile);
+            }
         }
 
         rename($target, $source);
@@ -149,13 +154,17 @@ class PdfService
         throw_unless(is_file($certificate) && is_file($privateKey), new \RuntimeException('Certificat de scellement PDF non configuré.'));
 
         $pdf = $this->newPdf();
+        // Signature d'approbation (« A ») et non de certification (DocMDP) : le PDF reste ouvert à d'autres
+        // signatures, par exemple celle d'une institution externe dans Acrobat. SigFlags 3 impose aux lecteurs
+        // un enregistrement incrémental, qui préserve le cachet.
         $pdf->setSignature(
             'file://'.$certificate,
             'file://'.$privateKey,
             (string) config('services.signature.private_key_password'),
             '',
             2,
-            ['Name' => Setting::entityName(), 'Reason' => 'Validation interne', 'Location' => 'Réseau interne']
+            ['Name' => Setting::entityName(), 'Reason' => 'Validation interne', 'Location' => 'Réseau interne'],
+            'A'
         );
         $pages = $pdf->setSourceFile($source);
         $this->copyPages($pdf, $pages);
@@ -186,28 +195,37 @@ class PdfService
         }
     }
 
-    private function drawSignature(Fpdi $pdf, array $page, SignatureRequest $request, string $signatureFile, string $qrFile): void
+    /**
+     * Cartouche de signature simple : image, mentions et, si le signataire l'a choisi, QR de vérification à droite.
+     *
+     * @param  array{width: float, height: float}  $page
+     */
+    private function drawSignature(Fpdi $pdf, array $page, SignatureRequest $request, string $signatureFile, ?string $qrFile): void
     {
         $x = $request->position_x * $page['width'];
         $y = $request->position_y * $page['height'];
         $w = $request->width * $page['width'];
         $h = $request->height * $page['height'];
-        $qr = min($h * .46, $w * .20);
+        $qr = $qrFile === null ? 0 : min($h * .46, $w * .20);
+        $contentWidth = $qrFile === null ? $w - 4 : $w - $qr - 6;
 
         $pdf->SetFillColor(255, 255, 255);
         $pdf->SetDrawColor(32, 47, 96);
         $pdf->SetLineWidth(.25);
         $pdf->RoundedRect($x, $y, $w, $h, 1.5, '1111', 'DF');
-        $pdf->Image($signatureFile, $x + 2, $y + 2, max(1, $w - $qr - 6), max(1, $h * .58), 'PNG', '', '', true, 300, '', false, false, 0, true);
-        $pdf->Image($qrFile, $x + $w - $qr - 2, $y + 2, $qr, $qr, 'PNG');
+        $pdf->Image($signatureFile, $x + 2, $y + 2, max(1, $contentWidth), max(1, $h * .58), 'PNG', '', '', true, 300, '', false, false, 0, true);
 
         $pdf->SetTextColor(32, 47, 96);
         $pdf->SetFont('helvetica', '', 7);
         $pdf->SetXY($x + 2, $y + $h * .62);
-        $pdf->MultiCell($w - $qr - 6, 2.8, implode("\n", $request->stampLines(now())), 0, 'L', false);
-        $pdf->SetFont('helvetica', '', 5.5);
-        $pdf->SetXY($x + $w - $qr - 2, $y + $qr + 2);
-        $pdf->MultiCell($qr, 2.4, 'Vérifier', 0, 'C', false);
+        $pdf->MultiCell($contentWidth, 2.8, implode("\n", $request->stampLines(now())), 0, 'L', false);
+
+        if ($qrFile !== null) {
+            $pdf->Image($qrFile, $x + $w - $qr - 2, $y + 2, $qr, $qr, 'PNG');
+            $pdf->SetFont('helvetica', '', 5.5);
+            $pdf->SetXY($x + $w - $qr - 2, $y + $qr + 2);
+            $pdf->MultiCell($qr, 2.4, 'Vérifier', 0, 'C', false);
+        }
     }
 
     /**

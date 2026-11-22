@@ -33,6 +33,7 @@ class ProfileController extends Controller
             'sign_show_name' => ['sometimes', 'boolean'],
             'sign_show_job_title' => ['sometimes', 'boolean'],
             'sign_show_date' => ['sometimes', 'boolean'],
+            'sign_show_qr' => ['sometimes', 'boolean'],
         ]);
         $request->user()->update($data);
         $audit->record('profile.identity.updated', null, $request->user(), [], $request);

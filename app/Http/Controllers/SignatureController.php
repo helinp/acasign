@@ -288,7 +288,7 @@ class SignatureController extends Controller
     }
 
     /**
-     * Mentions choisies (nom, qualité, date) ; la qualité saisie est gardée dans le profil.
+     * Mentions choisies (nom, qualité, date, QR de vérification) ; la qualité saisie est gardée dans le profil.
      */
     private function validateSignatureOptions(Request $request): void
     {
@@ -297,6 +297,7 @@ class SignatureController extends Controller
             'show_name' => ['nullable', 'boolean'],
             'show_job_title' => ['nullable', 'boolean'],
             'show_date' => ['nullable', 'boolean'],
+            'show_qr' => ['nullable', 'boolean'],
             'job_title' => ['nullable', 'string', 'max:120', 'required_if_accepted:show_job_title'],
         ], ['consent.accepted' => 'Cochez la confirmation de lecture pour signer.']);
         if (filled($options['job_title'] ?? null) && $options['job_title'] !== $request->user()->job_title) {
@@ -314,6 +315,7 @@ class SignatureController extends Controller
                 'show_name' => $request->boolean('show_name'),
                 'show_job_title' => $request->boolean('show_job_title'),
                 'show_date' => $request->boolean('show_date'),
+                'show_qr' => $request->boolean('show_qr', true),
             ],
         ]);
     }
