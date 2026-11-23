@@ -84,6 +84,69 @@ export function makeMovable(zone, onMoved, label) {
     zone.addEventListener('zone:moved', saveSoon);
 }
 
+/**
+ * Glisser-déposer d'un cadre, y compris d'une page à l'autre : le cadre est rattaché à la page
+ * située sous le pointeur. Écouteurs posés sur window (pas de setPointerCapture, perdu au changement de parent).
+ * Le déplacement ne démarre qu'au-delà de `threshold` px : un simple clic reste un clic.
+ *
+ * @param {HTMLElement} zone
+ * @param {PointerEvent} event  le pointerdown d'origine
+ * @param {() => void|Promise<void>} onDrop  appelé après un vrai déplacement
+ */
+export function startDrag(zone, event, onDrop, { threshold = 4 } = {}) {
+    if (event.button !== 0) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const initial = zone.getBoundingClientRect();
+    const offsetX = startX - initial.left;
+    const offsetY = startY - initial.top;
+    let dragging = false;
+
+    const move = e => {
+        if (!dragging) {
+            if (Math.hypot(e.clientX - startX, e.clientY - startY) < threshold) return;
+            dragging = true;
+            zone.classList.add('dragging');
+            document.activeElement?.blur?.();
+        }
+        e.preventDefault();
+        const target = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList?.contains('pdf-page'));
+        if (target && target !== zone.parentElement) target.appendChild(zone);
+        const page = zone.parentElement.getBoundingClientRect();
+        const box = zone.getBoundingClientRect();
+        const x = clamp(e.clientX - page.left - offsetX, 0, page.width - box.width);
+        const y = clamp(e.clientY - page.top - offsetY, 0, page.height - box.height);
+        zone.style.left = `${x / page.width * 100}%`;
+        zone.style.top = `${y / page.height * 100}%`;
+    };
+    const up = async () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
+        if (!dragging) return;
+        zone.classList.remove('dragging');
+        markDragged(zone);
+        // Le clic de fin de glissement ne doit ni cocher une case, ni (dé)sélectionner, ni déplacer un cadre sélectionné.
+        const swallow = e => { e.preventDefault(); e.stopPropagation(); };
+        window.addEventListener('click', swallow, { capture: true, once: true });
+        setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
+        await onDrop();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+}
+
+/** Place un cadre sur une autre page (mêmes coordonnées relatives, recadrées si besoin). */
+export function moveZoneToPage(zone, page) {
+    if (!page || zone.parentElement === page) return false;
+    page.appendChild(zone);
+    moveBy(zone, 0, 0);
+    page.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    zone.focus({ preventScroll: true });
+    return true;
+}
+
 /** Signale qu'un glisser-déposer vient d'avoir lieu (le clic qui suit ne doit pas sélectionner). */
 export function markDragged(zone) {
     zone.dataset.dragged = '1';

@@ -127,6 +127,12 @@ if (stage) {
     if (zonesMovable) {
         stage.querySelectorAll('.signature-zone').forEach(zone => makeMovable(zone, savePlacements, `Cadre de signature : ${zone.textContent}`));
     }
+    // Choix de la page depuis la liste des signataires (éditeur du demandeur).
+    document.querySelectorAll('[data-zone-page]').forEach(select => select.addEventListener('change', async () => {
+        const zone = stage.querySelector(`.signature-zone[data-id="${select.dataset.zonePage}"]`);
+        const { moveZoneToPage } = await import('./placement.js');
+        if (zone && moveZoneToPage(zone, pageWrappers[Number(select.value) - 1])) await savePlacements();
+    }));
     const { setupFields } = await import('./fields.js');
     setupFields({ stage, pages: pageWrappers, csrf });
 
@@ -135,19 +141,9 @@ if (stage) {
         zone.textContent = placement.label; zone.style.left = `${placement.x * 100}%`; zone.style.top = `${placement.y * 100}%`;
         zone.style.width = `${placement.width * 100}%`; zone.style.height = `${placement.height * 100}%`; wrapper.appendChild(zone);
         if (stage.dataset.movable === 'false') { zone.classList.add('is-locked'); zone.title = 'Emplacement fixé par le demandeur'; return; }
-        zone.addEventListener('pointerdown', event => {
-            zone.setPointerCapture(event.pointerId); zone.classList.add('dragging');
-            const bounds = wrapper.getBoundingClientRect(); const initial = zone.getBoundingClientRect();
-            const offsetX = event.clientX - initial.left; const offsetY = event.clientY - initial.top;
-            const move = e => {
-                moved = true;
-                const x = Math.max(0, Math.min(bounds.width - initial.width, e.clientX - bounds.left - offsetX));
-                const y = Math.max(0, Math.min(bounds.height - initial.height, e.clientY - bounds.top - offsetY));
-                zone.style.left = `${x / bounds.width * 100}%`; zone.style.top = `${y / bounds.height * 100}%`;
-            };
-            let moved = false;
-            const up = async () => { zone.classList.remove('dragging'); zone.removeEventListener('pointermove', move); zone.removeEventListener('pointerup', up); if (moved) { (await import('./placement.js')).markDragged(zone); await savePlacements(); } };
-            zone.addEventListener('pointermove', move); zone.addEventListener('pointerup', up);
+        zone.addEventListener('pointerdown', async event => {
+            const { startDrag } = await import('./placement.js');
+            startDrag(zone, event, savePlacements);
         });
     }
 
@@ -195,6 +191,10 @@ if (stage) {
         const response = await fetch(saveUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(body) });
         const message = document.querySelector('[data-save-state]');
         if (message) message.textContent = response.ok ? 'Position enregistrée' : 'Échec de l’enregistrement';
+        current.forEach(({ id, page }) => {
+            const select = document.querySelector(`[data-zone-page="${id}"]`);
+            if (select) select.value = String(page);
+        });
     }
 }
 
