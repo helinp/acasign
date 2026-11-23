@@ -6,13 +6,13 @@
 @if($batch->count() > 1)<p class="eyebrow">Lot · document {{ $position + 1 }} sur {{ $batch->count() }}</p>@endif
 @if($document->usesEid())<x-alert type="info">Signature par carte eID : les champs à compléter ne sont pas disponibles pour ce document.</x-alert>@endif
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
-    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0"><x-icon name="drag-drop" class="me-1" />Glissez chaque cadre à sa place, ou cliquez-le puis cliquez à l’endroit voulu. Au clavier : Tab pour choisir, flèches pour déplacer. Tout est enregistré automatiquement.</p></div>
+    <div><h1 class="page-title mb-1">{{ $document->title }}</h1><p class="small text-muted mb-0"><x-icon name="drag-drop" class="me-1" />Glissez chaque cadre à sa place, y compris vers une autre page (ou choisissez la page dans la liste des signataires). Vous pouvez aussi cliquer le cadre puis cliquer à l’endroit voulu. Au clavier : Tab pour choisir, flèches pour déplacer, Page préc./suiv. pour changer de page. Tout est enregistré automatiquement.</p></div>
     <div class="d-flex align-items-center gap-3"><span class="small text-muted" data-save-state role="status" aria-live="polite"></span>@if($nextUrl)<a href="{{ $nextUrl }}" class="btn btn-primary">Document suivant<x-icon name="arrow-right" class="icon-end" /></a>@else<a href="{{ $finishUrl }}" class="btn btn-primary"><x-icon :name="$finishIcon" />{{ $finishLabel }}</a>@endif</div>
 </div>
 <div class="row g-4">
     <aside class="col-lg-3">
         <div class="band"><span class="band__title"><x-icon name="users" />Signataires</span></div>
-        <div class="list-rows mb-3">@foreach($document->signatureRequests as $signature)<div><span class="num">{{ $loop->iteration }}</span><div class="small"><strong class="d-block">{{ $signature->signer_name }}</strong>Page {{ $signature->page }}</div></div>@endforeach</div>
+        <div class="list-rows mb-3">@foreach($document->signatureRequests as $signature)<div><span class="num">{{ $loop->iteration }}</span><div class="small"><strong class="d-block">{{ $signature->signer_name }}</strong>Page <select class="form-select form-select-sm d-inline-block w-auto py-0" id="zone-page-{{ $signature->id }}" data-zone-page="{{ $signature->id }}" aria-label="Page de la signature de {{ $signature->signer_name }}">@for($p = 1; $p <= $document->page_count; $p++)<option value="{{ $p }}" @selected($p === (int) $signature->page)>{{ $p }}</option>@endfor</select> / {{ $document->page_count }}</div></div>@endforeach</div>
         @unless($document->usesEid())
         <div class="band"><span class="band__title"><x-icon name="cursor-text" />Champs à compléter</span></div>
         <div class="panel p-3">

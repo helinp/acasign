@@ -1,5 +1,5 @@
 import { icon } from './icons.js';
-import { makeMovable, markDragged } from './placement.js';
+import { makeMovable, startDrag } from './placement.js';
 
 /**
  * Champs à compléter (date, coche, texte) superposés au PDF.
@@ -53,47 +53,13 @@ export function setupFields({ stage, pages, csrf }) {
     });
 
     /**
-     * Glisser-déposer depuis n'importe quel point du champ, y compris sa zone de saisie :
+     * Glisser-déposer depuis n'importe quel point du champ, y compris sa zone de saisie et vers une autre page :
      * le déplacement ne démarre qu'au-delà de 4 px, un simple clic garde donc la saisie (ou la coche).
      */
     const makeDraggable = (zone, field) => {
         zone.addEventListener('pointerdown', event => {
-            if (event.button !== 0 || event.target.closest('.field-remove')) return;
-            const startX = event.clientX;
-            const startY = event.clientY;
-            const bounds = zone.parentElement.getBoundingClientRect();
-            const initial = zone.getBoundingClientRect();
-            const offsetX = startX - initial.left;
-            const offsetY = startY - initial.top;
-            let dragging = false;
-
-            const move = e => {
-                if (!dragging) {
-                    if (Math.hypot(e.clientX - startX, e.clientY - startY) < 4) return;
-                    dragging = true;
-                    zone.classList.add('dragging');
-                    document.activeElement?.blur();
-                }
-                e.preventDefault();
-                const x = Math.max(0, Math.min(bounds.width - initial.width, e.clientX - bounds.left - offsetX));
-                const y = Math.max(0, Math.min(bounds.height - initial.height, e.clientY - bounds.top - offsetY));
-                zone.style.left = `${x / bounds.width * 100}%`;
-                zone.style.top = `${y / bounds.height * 100}%`;
-            };
-            const up = async () => {
-                window.removeEventListener('pointermove', move);
-                window.removeEventListener('pointerup', up);
-                window.removeEventListener('pointercancel', up);
-                if (!dragging) return;
-                zone.classList.remove('dragging');
-                markDragged(zone);
-                // Empêche le clic de fin de glissement de cocher/décocher la case.
-                zone.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
-                await saveGeometry(zone, field);
-            };
-            window.addEventListener('pointermove', move);
-            window.addEventListener('pointerup', up);
-            window.addEventListener('pointercancel', up);
+            if (event.target.closest('.field-remove')) return;
+            startDrag(zone, event, () => saveGeometry(zone, field));
         });
     };
 
