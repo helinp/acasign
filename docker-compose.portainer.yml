@@ -75,6 +75,11 @@ services:
       - traefik.http.routers.acasign-https.entrypoints=${TRAEFIK_HTTPS_ENTRYPOINT:-websecure}
       - traefik.http.routers.acasign-https.tls=true
       - traefik.http.services.acasign.loadbalancer.server.port=8080
+      # Internet (facultatif) : page de vérification seule, en lecture seule, sur un entrypoint dédié
+      # (ex. « public » derrière un tunnel Cloudflare). Sans SIGNATURE_PUBLIC_HOST, le nom .invalid ne correspond à rien.
+      - traefik.http.routers.acasign-public.rule=Host(`${SIGNATURE_PUBLIC_HOST:-verifier.invalid}`) && (Method(`GET`) || Method(`HEAD`)) && (PathRegexp(`^/verifier/[A-Za-z0-9_-]+$$`) || PathPrefix(`/build/`) || Path(`/branding/logo`))
+      - traefik.http.routers.acasign-public.entrypoints=${TRAEFIK_PUBLIC_ENTRYPOINT:-websecure}
+      - traefik.http.routers.acasign-public.service=acasign
 
   worker:
     build: .
