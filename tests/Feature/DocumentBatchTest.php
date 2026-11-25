@@ -87,7 +87,7 @@ class DocumentBatchTest extends TestCase
         $signatureRequest = $document->signatureRequests->first();
         $sender->update(['signature_path' => 'signatures/x.enc']);
 
-        $this->actingAs($sender)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1])->assertStatus(409);
+        $this->actingAs($sender)->post(route('signatures.sign', $signatureRequest), ['show_name' => 1])->assertStatus(409)->assertSee('Ce document se signe avec la carte eID.');
         $this->actingAs($sender)->postJson(route('documents.fields.store', $document), ['type' => 'text', 'signature_request_id' => $signatureRequest->id, 'page' => 1, 'x' => 0.1, 'y' => 0.1, 'width' => 0.2, 'height' => 0.03])->assertStatus(422);
         $this->actingAs($sender)->get(route('signatures.show', $signatureRequest))->assertOk()->assertSee('data-eid-sign', false)->assertSee('data-eid-help="auto"', false);
     }
