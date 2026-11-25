@@ -80,6 +80,8 @@ function setupEidSign(form) {
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const say = (text, failed = false) => { progress.textContent = text; progress.classList.toggle('text-danger', failed); };
 
+    // Bouton actif seulement une fois ce gestionnaire en place : sinon le clic enverrait le formulaire classique (409).
+    submit.disabled = false;
     form.addEventListener('submit', async event => {
         if (event.submitter?.dataset.signMode !== 'eid') return; // signature interne : envoi classique du formulaire
         event.preventDefault();

@@ -81,6 +81,15 @@ if (document.querySelector('[data-eid-help], [data-eid-sign]')) {
     import('./eid.js');
 }
 
+// Signature interne : un seul envoi (un double clic renverrait « Cette demande n’est plus signable », 409).
+document.getElementById('sign-form')?.addEventListener('submit', event => {
+    if (event.submitter?.dataset.signMode !== 'internal') return;
+    const form = event.currentTarget;
+    if (form.dataset.submitting) { event.preventDefault(); return; }
+    form.dataset.submitting = '1';
+    setTimeout(() => form.querySelectorAll('button').forEach(button => { button.disabled = true; }), 0);
+});
+
 const stage = document.querySelector('[data-pdf-stage]');
 if (stage) {
     const pdfjsLib = await import('pdfjs-dist');

@@ -59,7 +59,7 @@
     <div class="modal-footer">
         <button class="btn btn-ghost-primary" type="button" data-bs-dismiss="modal"><x-icon name="arrow-left" />Retour</button>
         @unless($eidOnly)<button class="btn btn-primary" data-sign-only="internal" data-sign-mode="internal" @disabled(! $me->signature_path)><x-icon name="signature" />Signer sans eID</button>@endunless
-        @if($eidAvailable)<button class="btn btn-coral" data-sign-submit data-sign-only="eid" data-sign-mode="eid"><x-icon name="id" />Signer avec la carte eID</button>@endif
+        @if($eidAvailable)<button class="btn btn-coral" data-sign-submit data-sign-only="eid" data-sign-mode="eid" disabled><x-icon name="id" />Signer avec la carte eID</button>@endif
     </div>
 </form></div></div>
 
