@@ -52,15 +52,21 @@ class SignatureController extends Controller
         $values = $this->validatedFieldValues($request, $signatureRequest);
 
         $source = Storage::disk('local')->path($signatureRequest->document->file_path);
-        $backup = tempnam(sys_get_temp_dir(), 'visa-pdf-backup-');
-        throw_unless(copy($source, $backup), new \RuntimeException('Impossible de sécuriser la version courante du PDF.'));
+        $backup = null;
 
         try {
-            DB::transaction(function () use ($request, $signatureRequest, $images, $pdf, $audit, $values) {
+            DB::transaction(function () use ($request, $signatureRequest, $images, $pdf, $audit, $values, $source, &$backup) {
                 $signatureRequest = SignatureRequest::lockForUpdate()->findOrFail($signatureRequest->id);
                 $document = Document::lockForUpdate()->findOrFail($signatureRequest->document_id);
                 abort_unless($signatureRequest->status === 'pending' && $document->status === 'pending', 409, 'Cette demande n’est plus signable.');
                 abort_if($document->expires_at?->isPast(), 409, 'Cette demande a expiré.');
+
+                // Copie de secours prise sous verrou seulement : prise avant, elle pouvait écraser
+                // la signature d'une requête concurrente (double envoi) lors de la restauration.
+                if ($backup === null) {
+                    $backup = tempnam(sys_get_temp_dir(), 'visa-pdf-backup-');
+                    throw_unless(copy($source, $backup), new \RuntimeException('Impossible de sécuriser la version courante du PDF.'));
+                }
 
                 $isLast = ! $document->signatureRequests()->where('status', 'pending')->whereKeyNot($signatureRequest->id)->exists();
                 if ($isLast) {
@@ -83,10 +89,14 @@ class SignatureController extends Controller
                 }
             }, 3);
         } catch (\Throwable $exception) {
-            copy($backup, $source);
+            if ($backup !== null) {
+                copy($backup, $source);
+            }
             throw $exception;
         } finally {
-            @unlink($backup);
+            if ($backup !== null) {
+                @unlink($backup);
+            }
         }
 
         DispatchDocumentNotification::dispatch($signatureRequest->document_id, 'signature.signed');
