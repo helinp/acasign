@@ -10,6 +10,7 @@ use App\Services\EncryptedSignatureStorage;
 use App\Services\PdfService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -33,6 +34,29 @@ class SimpleSignatureTest extends TestCase
 
         $this->assertFalse($signatureRequest->refresh()->showsQrCode());
         $this->assertSame('signed', $signatureRequest->document->status);
+    }
+
+    public function test_duplicate_submission_rejected_under_lock_keeps_the_concurrently_signed_pdf(): void
+    {
+        Storage::fake('local');
+        [$signer, $signatureRequest] = $this->pendingSignature();
+        $signer->update(['signature_path' => 'signatures/x.enc']);
+        $path = $signatureRequest->document->file_path;
+        $outerLevel = DB::transactionLevel();
+
+        // Double envoi : la première requête signe pendant que celle-ci attend le verrou.
+        SignatureRequest::retrieved(function (SignatureRequest $locked) use ($path, $outerLevel): void {
+            if (DB::transactionLevel() > $outerLevel && $locked->status === 'pending') {
+                Storage::disk('local')->put($path, 'PDF signé par la première requête');
+                $locked->status = 'signed';
+            }
+        });
+
+        $this->actingAs($signer)->post(route('signatures.sign', $signatureRequest), ['consent' => 1, 'show_name' => 1])
+            ->assertStatus(409)
+            ->assertSee('Cette demande n’est plus signable.');
+
+        $this->assertSame('PDF signé par la première requête', Storage::disk('local')->get($path));
     }
 
     public function test_qr_code_is_kept_when_the_choice_is_not_sent(): void
