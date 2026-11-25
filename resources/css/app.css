@@ -350,6 +350,7 @@ tr[data-href]:hover > * { --tblr-table-bg: var(--ac-action-fond); --tblr-table-b
 .form-control-color { width: 3.5rem; height: 2.5rem; padding: .2rem; }
 .foot { background: var(--ac-noir); color: #fff; font-size: 12px; padding: 14px 0; margin-top: 3rem; }
 .foot a { color: #fff; }
+.foot__version { opacity: .7; font-variant-numeric: tabular-nums; }
 .skip-link { position: absolute; left: -9999px; top: 0; z-index: 1000; background: var(--ac-noir); color: #fff; padding: 10px 16px; font-weight: 700; }
 .skip-link:focus { left: 8px; top: 8px; color: #fff; }
 

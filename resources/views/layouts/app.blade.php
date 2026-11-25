@@ -42,10 +42,11 @@
     @endif
     @yield('content')
 </main>
-@if($footerText || $contactEmail)
+@if($footerText || $contactEmail || $appVersion)
 <footer class="foot"><div class="container">
     @if($footerText)<span>{{ $footerText }}</span>@endif
     @if($contactEmail)<a href="mailto:{{ $contactEmail }}"><x-icon name="mail" />Aide : {{ $contactEmail }}</a>@endif
+    @if($appVersion)<span class="foot__version">Version {{ $appVersion }}</span>@endif
 </div></footer>
 @endif
 </body>
